@@ -110,7 +110,14 @@ public static class TransformStage
             result.Errors.Add($"Sitemap generation failed: {ex.Message}");
         }
 
-        // 6. Copy theme static assets
+        // 6. Copy search index if it exists
+        var searchIndexPath = Path.Combine(inputDir, "search-index.json");
+        if (File.Exists(searchIndexPath))
+        {
+            File.Copy(searchIndexPath, Path.Combine(outputDir, "search-index.json"), overwrite: true);
+        }
+
+        // 7. Copy theme static assets
         foreach (var (relativePath, fullPath) in theme.GetStaticAssets())
         {
             ct.ThrowIfCancellationRequested();

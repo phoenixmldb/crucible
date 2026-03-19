@@ -37,6 +37,10 @@
         </header>
         <div class="layout">
           <nav class="sidebar" aria-label="Documentation">
+            <div class="search-container">
+              <input type="search" id="search-input" placeholder="Search docs..." aria-label="Search documentation"/>
+              <div id="search-results" class="search-results" hidden="hidden"></div>
+            </div>
             <xsl:if test="$manifest">
               <xsl:apply-templates select="$manifest/site" mode="nav"/>
             </xsl:if>
@@ -50,6 +54,8 @@
         <footer class="site-footer">
           <p>Built with <a href="https://github.com/phoenixmldb/crucible">Crucible</a></p>
         </footer>
+        <script src="https://unpkg.com/lunr/lunr.js"></script>
+        <script src="{$base-url}js/search.js"></script>
         <script src="{$base-url}js/theme.js"></script>
       </body>
     </html>

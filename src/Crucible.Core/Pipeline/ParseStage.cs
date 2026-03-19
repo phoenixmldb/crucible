@@ -6,6 +6,7 @@ using Crucible.Core.Extensions;
 using Crucible.Core.Manifest;
 using Crucible.Core.Models;
 using Crucible.Core.Parsing;
+using Crucible.Core.Search;
 
 #pragma warning disable CA1054 // URI parameters should not be strings — baseUrl is a path prefix, not a full URI
 
@@ -103,6 +104,9 @@ public static class ParseStage
         var manifestXml = SiteManifestBuilder.ToXml(manifest);
         var manifestPath = Path.Combine(outputDir, "site-manifest.xml");
         await Task.Run(() => manifestXml.Save(manifestPath), ct).ConfigureAwait(false);
+
+        // 9. Build search index from the emitted XML
+        await SearchIndexBuilder.BuildAsync(outputDir, ct).ConfigureAwait(false);
 
         timer.Stop();
         result.ParseTiming = timer;
