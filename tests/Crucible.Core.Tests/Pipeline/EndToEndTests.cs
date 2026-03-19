@@ -58,9 +58,8 @@ public class EndToEndTests
             indexHtml.Should().Contain("<nav");
             indexHtml.Should().Contain("<main");
 
-            // TODO: Internal links should be rewritten from .md to .html
-            // once LinkResolver is integrated into the transform stage.
-            // indexHtml.Should().NotContain(".md\"");
+            // Internal links rewritten from .md to .html
+            indexHtml.Should().NotContain(".md\"");
         }
         finally
         {

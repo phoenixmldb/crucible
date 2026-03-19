@@ -23,7 +23,8 @@ public static class MarkdownToXmlEmitter
         .Build();
 
     public static string Emit(string markdown, DocumentMetadata metadata,
-        string path, IEnumerable<ICrucibleExtension>? extensions = null)
+        string path, IEnumerable<ICrucibleExtension>? extensions = null,
+        LinkResolver? linkResolver = null, ICollection<string>? warnings = null)
     {
         ArgumentNullException.ThrowIfNull(metadata);
 
@@ -42,6 +43,8 @@ public static class MarkdownToXmlEmitter
         {
             Writer = writer,
             DocumentPath = path,
+            LinkResolver = linkResolver,
+            Warnings = warnings ?? [],
         };
 
         writer.WriteStartDocument();
@@ -294,8 +297,21 @@ public static class MarkdownToXmlEmitter
         }
         else
         {
+            var href = link.Url ?? "";
+
+            // Resolve internal .md links to .html
+            if (ctx.LinkResolver != null && !string.IsNullOrEmpty(href))
+            {
+                var resolved = ctx.LinkResolver.Resolve(href, ctx.DocumentPath);
+                href = resolved.ResolvedHref;
+                if (resolved.IsBroken)
+                {
+                    ctx.Warnings.Add($"Broken link in {ctx.DocumentPath}: {link.Url}");
+                }
+            }
+
             ctx.Writer.WriteStartElement("link");
-            ctx.Writer.WriteAttributeString("href", link.Url ?? "");
+            ctx.Writer.WriteAttributeString("href", href);
 
             if (link.Title != null)
             {

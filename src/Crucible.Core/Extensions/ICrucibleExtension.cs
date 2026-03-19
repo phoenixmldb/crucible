@@ -2,6 +2,7 @@ namespace Crucible.Core.Extensions;
 
 using System.Xml;
 using Crucible.Core.Models;
+using Crucible.Core.Parsing;
 using Markdig.Syntax;
 
 public interface ICrucibleExtension
@@ -17,6 +18,8 @@ public sealed class XmlEmitterContext
     public required XmlWriter Writer { get; init; }
     public required string DocumentPath { get; init; }
     public SiteManifest? Manifest { get; init; }
+    public LinkResolver? LinkResolver { get; init; }
+    public ICollection<string> Warnings { get; init; } = new List<string>();
 }
 
 public record CrucibleAsset(string RelativePath, string ContentType, ReadOnlyMemory<byte> Content);

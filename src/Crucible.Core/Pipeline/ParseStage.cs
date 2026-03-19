@@ -80,7 +80,10 @@ public static class ParseStage
             ct.ThrowIfCancellationRequested();
 
             var pagePath = GetPagePath(filePath, sourceDir);
-            var xml = MarkdownToXmlEmitter.Emit(markdown, metadata, pagePath, extensionsList);
+            var emitWarnings = new List<string>();
+            var xml = MarkdownToXmlEmitter.Emit(markdown, metadata, pagePath, extensionsList,
+                linkResolver, emitWarnings);
+            result.Warnings.AddRange(emitWarnings);
 
             // Mirror source structure, .md -> .xml
             var relativePath = Path.GetRelativePath(sourceDir, filePath);
@@ -103,9 +106,6 @@ public static class ParseStage
 
         timer.Stop();
         result.ParseTiming = timer;
-
-        // Suppress unused variable warning — linkResolver is created for future use
-        _ = linkResolver;
 
         return result;
     }

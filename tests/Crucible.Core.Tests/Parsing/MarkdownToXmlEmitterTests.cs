@@ -9,10 +9,11 @@ using Xunit;
 public class MarkdownToXmlEmitterTests
 {
     private static XDocument Emit(string markdown, string path = "test",
-        DocumentMetadata? metadata = null)
+        DocumentMetadata? metadata = null, LinkResolver? linkResolver = null)
     {
         metadata ??= new DocumentMetadata { Title = "Test" };
-        var xml = MarkdownToXmlEmitter.Emit(markdown, metadata, path);
+        var xml = MarkdownToXmlEmitter.Emit(markdown, metadata, path,
+            linkResolver: linkResolver);
         return XDocument.Parse(xml);
     }
 
@@ -141,5 +142,36 @@ public class MarkdownToXmlEmitterTests
     {
         var doc = Emit("Above\n\n***\n\nBelow");
         doc.Root!.Element("body")!.Descendants("thematic-break").Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void Emit_InternalMdLink_RewrittenToHtml()
+    {
+        var resolver = new LinkResolver(["getting-started/installation"]);
+        var doc = Emit("[Install](getting-started/installation.md)",
+            path: "index", linkResolver: resolver);
+        var link = doc.Root!.Element("body")!.Element("paragraph")!.Element("link")!;
+        link.Attribute("href")!.Value.Should().Be("getting-started/installation.html");
+    }
+
+    [Fact]
+    public void Emit_BrokenLink_CollectsWarning()
+    {
+        var resolver = new LinkResolver(["index"]);
+        var warnings = new List<string>();
+        var metadata = new DocumentMetadata { Title = "Test" };
+        MarkdownToXmlEmitter.Emit("[Missing](nonexistent.md)", metadata, "index",
+            linkResolver: resolver, warnings: warnings);
+        warnings.Should().ContainSingle().Which.Should().Contain("Broken link");
+    }
+
+    [Fact]
+    public void Emit_ExternalLink_NotRewritten()
+    {
+        var resolver = new LinkResolver(["index"]);
+        var doc = Emit("[Google](https://google.com)", path: "index",
+            linkResolver: resolver);
+        var link = doc.Root!.Element("body")!.Element("paragraph")!.Element("link")!;
+        link.Attribute("href")!.Value.Should().Be("https://google.com");
     }
 }
