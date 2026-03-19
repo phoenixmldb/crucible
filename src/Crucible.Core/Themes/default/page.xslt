@@ -27,12 +27,18 @@
           <meta property="og:description" content="{@description}"/>
         </xsl:if>
         <link rel="stylesheet" href="{$base-url}css/style.css"/>
+        <script>
+          (function(){var t=localStorage.getItem("crucible-theme");if(t)document.documentElement.setAttribute("data-theme",t)})();
+        </script>
       </head>
       <body>
         <header class="site-header">
           <div class="header-content">
             <a href="{$base-url}index.html" class="site-logo"><xsl:value-of select="$site-title"/></a>
-            <button class="nav-toggle" aria-label="Toggle navigation">&#9776;</button>
+            <div class="header-actions">
+              <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">&#9790;</button>
+              <button class="nav-toggle" aria-label="Toggle navigation">&#9776;</button>
+            </div>
           </div>
         </header>
         <div class="layout">
