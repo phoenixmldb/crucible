@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Crucible.Core/Crucible.Core.csproj" />
+    <ProjectReference Include="../../src/Crucible.Extensions/Crucible.Extensions.csproj" />
   </ItemGroup>
 
   <ItemGroup>
