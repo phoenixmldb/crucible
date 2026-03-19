@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Markdig" />
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../phoenixmldb-xslt/src/PhoenixmlDb.Xslt/PhoenixmlDb.Xslt.csproj" />
+  </ItemGroup>
+
+</Project>

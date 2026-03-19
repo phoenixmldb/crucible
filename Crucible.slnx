@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="src/Crucible.Core/Crucible.Core.csproj" />
+  <Project Path="src/Crucible.Extensions/Crucible.Extensions.csproj" />
+  <Project Path="src/Crucible.Cli/Crucible.Cli.csproj" />
+  <Folder Name="/tests/">
+    <Project Path="tests/Crucible.Core.Tests/Crucible.Core.Tests.csproj" />
+    <Project Path="tests/Crucible.Extensions.Tests/Crucible.Extensions.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>crucible</ToolCommandName>
+    <AssemblyName>crucible</AssemblyName>
+    <NoWarn>$(NoWarn);CA1303</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Crucible.Core/Crucible.Core.csproj" />
+    <ProjectReference Include="../Crucible.Extensions/Crucible.Extensions.csproj" />
+  </ItemGroup>
+
+</Project>
