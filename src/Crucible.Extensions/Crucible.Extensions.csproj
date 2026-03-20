@@ -1,5 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <RootNamespace>Crucible.Extensions</RootNamespace>
+    <Description>Built-in extensions for the Crucible documentation generator</Description>
+    <PackageTags>crucible;extensions;mermaid;documentation</PackageTags>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="../Crucible.Core/Crucible.Core.csproj" />
   </ItemGroup>

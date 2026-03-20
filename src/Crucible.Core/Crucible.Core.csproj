@@ -1,16 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <RootNamespace>Crucible.Core</RootNamespace>
+    <Description>Pipeline engine for the Crucible static documentation generator</Description>
+    <PackageTags>documentation;markdown;xslt;static-site;xml</PackageTags>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Markdig" />
     <PackageReference Include="YamlDotNet" />
+    <PackageReference Include="PhoenixmlDb.Xslt" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="Themes/**/*" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="../../../phoenixmldb-xslt/src/PhoenixmlDb.Xslt/PhoenixmlDb.Xslt.csproj" />
   </ItemGroup>
 
 </Project>

@@ -3,6 +3,9 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
+    <!-- PhoenixmlDb -->
+    <PackageVersion Include="PhoenixmlDb.Xslt" Version="1.0.0" />
+    <!-- Markdown/YAML -->
     <PackageVersion Include="Markdig" Version="0.40.0" />
     <PackageVersion Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>
