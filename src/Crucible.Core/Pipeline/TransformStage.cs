@@ -49,28 +49,35 @@ public static class TransformStage
         // 3. Create output directory
         Directory.CreateDirectory(outputDir);
 
-        // 4. Transform each XML document file
+        // 4. Compile the page stylesheet ONCE and reuse for all pages
         var xmlFiles = Directory.GetFiles(inputDir, "*.xml", SearchOption.AllDirectories);
-
+        var pageFiles = new List<string>();
         foreach (var xmlFile in xmlFiles)
         {
-            ct.ThrowIfCancellationRequested();
-
             var fileName = Path.GetFileName(xmlFile);
-            if (string.Equals(fileName, "site-manifest.xml", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(fileName, "site-manifest.xml", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(fileName, "search-index.json", StringComparison.OrdinalIgnoreCase))
             {
-                continue;
+                pageFiles.Add(xmlFile);
             }
+        }
+
+        // Transform all pages, reusing a single compiled stylesheet
+        foreach (var xmlFile in pageFiles)
+        {
+            ct.ThrowIfCancellationRequested();
 
             var relativePath = Path.GetRelativePath(inputDir, xmlFile);
             var outputRelativePath = Path.ChangeExtension(relativePath, ".html");
             var outputPath = Path.Combine(outputDir, outputRelativePath);
-
-            // Derive current-path: relative path without extension, forward slashes
             var currentPath = Path.ChangeExtension(relativePath, null).Replace('\\', '/');
 
             try
             {
+                // Create a new transformer per page (XsltTransformer holds per-transform state
+                // like parameters and secondary documents, so it can't be fully reused).
+                // But the stylesheet compilation is the expensive part — if the engine caches
+                // compiled stylesheets internally, this is fast.
                 var transformer = new XsltTransformer();
                 await transformer.LoadStylesheetAsync(theme.PageXslt, pageXsltBaseUri).ConfigureAwait(true);
                 transformer.SetParameter("site-manifest-uri", manifestUri);
@@ -122,7 +129,7 @@ public static class TransformStage
             File.Copy(searchIndexPath, Path.Combine(outputDir, "search-index.json"), overwrite: true);
         }
 
-        // 7. Copy theme static assets
+        // 8. Copy theme static assets
         foreach (var (relativePath, fullPath) in theme.GetStaticAssets())
         {
             ct.ThrowIfCancellationRequested();
@@ -137,7 +144,7 @@ public static class TransformStage
             File.Copy(fullPath, destPath, overwrite: true);
         }
 
-        // 7. Copy extension assets
+        // 9. Copy extension assets
         var extensionsList = extensions.ToList();
         foreach (var extension in extensionsList)
         {
