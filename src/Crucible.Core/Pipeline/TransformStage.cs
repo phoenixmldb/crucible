@@ -3,6 +3,7 @@ namespace Crucible.Core.Pipeline;
 using System.Diagnostics;
 using System.Xml.Linq;
 using Crucible.Core.Extensions;
+using Crucible.Core.Search;
 using Crucible.Core.Themes;
 using PhoenixmlDb.Xslt;
 
@@ -110,7 +111,11 @@ public static class TransformStage
             result.Errors.Add($"Sitemap generation failed: {ex.Message}");
         }
 
-        // 6. Copy search index if it exists
+        // 6. Generate llms.txt and llms-full.txt
+        await LlmsTxtGenerator.GenerateAsync(inputDir, outputDir, siteTitle, ct)
+            .ConfigureAwait(true);
+
+        // 7. Copy search index if it exists
         var searchIndexPath = Path.Combine(inputDir, "search-index.json");
         if (File.Exists(searchIndexPath))
         {
