@@ -50,6 +50,15 @@
     themeToggle.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
   }
 
+  // --- Collapsible Nav Sections ---
+  document.querySelectorAll(".nav-section-toggle").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var section = btn.parentElement;
+      var isOpen = section.classList.toggle("open");
+      btn.setAttribute("aria-expanded", String(isOpen));
+    });
+  });
+
   // --- Mobile Nav Toggle ---
   var navToggle = document.querySelector(".nav-toggle");
   var sidebar = document.querySelector(".sidebar");

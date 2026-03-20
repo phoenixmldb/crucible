@@ -193,14 +193,45 @@ img {
   font-weight: 600;
 }
 
-.nav-section-title {
-  display: block;
+/* Collapsible nav sections */
+.nav-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
   padding: 0.5rem 0.75rem 0.2rem;
+  border: none;
+  background: none;
+  cursor: pointer;
   font-size: 0.75rem;
   font-weight: 700;
+  font-family: inherit;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--color-text-muted);
+  text-align: left;
+}
+
+.nav-section-toggle:hover {
+  color: var(--color-text);
+}
+
+.nav-chevron {
+  font-size: 0.625rem;
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
+.nav-section.open > .nav-section-toggle .nav-chevron {
+  transform: rotate(90deg);
+}
+
+.nav-section-children {
+  display: none;
+}
+
+.nav-section.open > .nav-section-children {
+  display: block;
 }
 
 /* --- Main Content --- */
@@ -327,9 +358,7 @@ th {
   font-weight: 600;
 }
 
-tbody tr:nth-child(even) {
-  background: #f8fafc;
-}
+/* No alternating row colors — keep tables uniform */
 
 /* --- Horizontal Rule --- */
 hr {

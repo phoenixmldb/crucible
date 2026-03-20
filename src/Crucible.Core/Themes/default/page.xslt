@@ -75,9 +75,13 @@
   </xsl:template>
 
   <xsl:template match="section" mode="nav">
-    <li class="nav-section">
-      <span class="nav-section-title"><xsl:value-of select="@title"/></span>
-      <ul>
+    <xsl:variable name="has-active" select="exists(.//page[@path = $current-path])"/>
+    <li class="nav-section{if ($has-active) then ' open' else ''}">
+      <button class="nav-section-toggle" aria-expanded="{if ($has-active) then 'true' else 'false'}">
+        <span class="nav-chevron">&#9656;</span>
+        <xsl:value-of select="@title"/>
+      </button>
+      <ul class="nav-section-children">
         <xsl:apply-templates select="page|section" mode="nav"/>
       </ul>
     </li>
