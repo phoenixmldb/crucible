@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>crucible</ToolCommandName>
-    <PackageId>Crucible.Cli</PackageId>
+    <PackageId>crucible</PackageId>
     <AssemblyName>crucible</AssemblyName>
     <Description>Static documentation generator powered by XSLT 4.0 — Markdown to XML to HTML</Description>
     <PackageTags>documentation;markdown;xslt;static-site;xml;crucible</PackageTags>

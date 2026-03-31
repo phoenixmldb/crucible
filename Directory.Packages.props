@@ -4,9 +4,9 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- PhoenixmlDb -->
-    <PackageVersion Include="PhoenixmlDb.Xslt" Version="1.0.22" />
+    <PackageVersion Include="PhoenixmlDb.Xslt" Version="1.1.0.10" />
     <!-- Markdown/YAML -->
-    <PackageVersion Include="Markdig" Version="0.40.0" />
+    <PackageVersion Include="Markdig" Version="1.1.2" />
     <PackageVersion Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>
   <ItemGroup>
