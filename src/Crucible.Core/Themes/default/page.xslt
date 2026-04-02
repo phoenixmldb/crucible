@@ -58,7 +58,7 @@
           </main>
         </div>
         <footer class="site-footer">
-          <p>Built with <a href="https://github.com/phoenixmldb/crucible">Crucible</a></p>
+          <p>Built with <a href="https://github.com/phoenixmldb/crucible" target="_blank" noreferrer noopener>Crucible</a> by <a href="https://endpointsystems.com" target="_blank" noreferrer noopener>Endpoint Systems</a></p>
         </footer>
         <script src="https://unpkg.com/lunr/lunr.js"></script>
         <script src="{$base-url}js/search.js"></script>
