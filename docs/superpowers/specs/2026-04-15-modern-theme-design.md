@@ -24,7 +24,7 @@ src/Crucible.Core/Themes/modern/
     prism.js           # Prism core + autoloader
 ```
 
-`ThemeLoader.GetStaticAssets` already copies the contents of `css/` and `js/` recursively, so no loader change is needed for asset discovery. The `Crucible.Core.csproj` content glob must include `Themes/modern/**/*`; broaden the existing glob to `Themes/**/*` if it currently names `default` explicitly.
+`ThemeLoader.GetStaticAssets` already copies the contents of `css/` and `js/` recursively, so no loader change is needed for asset discovery. The existing `Crucible.Core.csproj` content glob is already `Themes/**/*`, so any files placed under `Themes/modern/` are automatically bundled.
 
 ## Layout (page.xslt)
 
@@ -190,7 +190,6 @@ All four are additive. `default` theme renders identically before and after.
 2. **`Crucible.Core/Models/DocumentMetadata.cs`** — add `bool? Toc { get; set; }`.
 3. **`Crucible.Core/Parsing/MarkdownToXmlEmitter.cs`** — when emitting `<document>`, if `metadata.Toc == false`, write `toc="false"` attribute.
 4. **`Crucible.Core/Themes/ThemeLoader.cs`** — if `customThemePath` is a non-empty string that is not a directory but matches a folder name under `AppContext.BaseDirectory/Themes/`, resolve it as a built-in. This enables `--theme modern` without a path. Pass-through today's behaviour when the value is `null` or a real directory.
-5. **`src/Crucible.Core/Crucible.Core.csproj`** — broaden the `Themes` content glob to include `Themes/**/*` so the new theme's assets ship.
 
 ## Testing
 
