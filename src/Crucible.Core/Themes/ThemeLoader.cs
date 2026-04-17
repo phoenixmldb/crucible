@@ -8,7 +8,7 @@ public sealed class ThemeLoader
 
     public ThemeLoader(string? customThemePath = null)
     {
-        ThemeDirectory = customThemePath ?? GetDefaultThemePath();
+        ThemeDirectory = ResolveThemeDirectory(customThemePath);
         PageXslt = File.ReadAllText(Path.Combine(ThemeDirectory, "page.xslt"));
         SitemapXslt = File.ReadAllText(Path.Combine(ThemeDirectory, "sitemap.xslt"));
     }
@@ -27,8 +27,28 @@ public sealed class ThemeLoader
         }
     }
 
-    private static string GetDefaultThemePath()
+    private static string ResolveThemeDirectory(string? customThemePath)
     {
-        return Path.Combine(AppContext.BaseDirectory, "Themes", "default");
+        if (string.IsNullOrEmpty(customThemePath))
+        {
+            return GetBuiltInPath("default");
+        }
+
+        if (Directory.Exists(customThemePath))
+        {
+            return customThemePath;
+        }
+
+        var builtIn = GetBuiltInPath(customThemePath);
+        if (Directory.Exists(builtIn))
+        {
+            return builtIn;
+        }
+
+        throw new DirectoryNotFoundException(
+            $"Theme '{customThemePath}' not found as a directory or a built-in theme.");
     }
+
+    private static string GetBuiltInPath(string name) =>
+        Path.Combine(AppContext.BaseDirectory, "Themes", name);
 }
