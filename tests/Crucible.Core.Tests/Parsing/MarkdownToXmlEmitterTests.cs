@@ -45,6 +45,42 @@ public class MarkdownToXmlEmitterTests
     }
 
     [Fact]
+    public void Emit_FencedCodeBlock_LanguageOnly_NoFilenameAttribute()
+    {
+        var doc = Emit("```bash\necho hi\n```");
+        var code = doc.Root!.Element("body")!.Element("code-block")!;
+        code.Attribute("language")!.Value.Should().Be("bash");
+        code.Attribute("filename").Should().BeNull();
+    }
+
+    [Fact]
+    public void Emit_FencedCodeBlock_WithTitleDoubleQuoted_ExtractsFilename()
+    {
+        var doc = Emit("```bash title=\"install.sh\"\necho hi\n```");
+        var code = doc.Root!.Element("body")!.Element("code-block")!;
+        code.Attribute("language")!.Value.Should().Be("bash");
+        code.Attribute("filename")!.Value.Should().Be("install.sh");
+    }
+
+    [Fact]
+    public void Emit_FencedCodeBlock_WithTitleSingleQuoted_ExtractsFilename()
+    {
+        var doc = Emit("```bash title='install.sh'\necho hi\n```");
+        var code = doc.Root!.Element("body")!.Element("code-block")!;
+        code.Attribute("language")!.Value.Should().Be("bash");
+        code.Attribute("filename")!.Value.Should().Be("install.sh");
+    }
+
+    [Fact]
+    public void Emit_FencedCodeBlock_WithUnknownTrailingArgs_IgnoresThem()
+    {
+        var doc = Emit("```bash extra-junk=1\necho hi\n```");
+        var code = doc.Root!.Element("body")!.Element("code-block")!;
+        code.Attribute("language")!.Value.Should().Be("bash");
+        code.Attribute("filename").Should().BeNull();
+    }
+
+    [Fact]
     public void Emit_UnorderedList_ProducesListElement()
     {
         var doc = Emit("- Item A\n- Item B");
