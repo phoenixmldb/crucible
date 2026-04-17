@@ -210,4 +210,31 @@ public class MarkdownToXmlEmitterTests
         var link = doc.Root!.Element("body")!.Element("paragraph")!.Element("link")!;
         link.Attribute("href")!.Value.Should().Be("https://google.com");
     }
+
+    [Fact]
+    public void Emit_TocFalse_WritesTocAttribute()
+    {
+        var metadata = new DocumentMetadata { Title = "T", Toc = false };
+        var xml = MarkdownToXmlEmitter.Emit("# Hi", metadata, "test");
+        var doc = XDocument.Parse(xml);
+        doc.Root!.Attribute("toc")!.Value.Should().Be("false");
+    }
+
+    [Fact]
+    public void Emit_TocTrue_OmitsTocAttribute()
+    {
+        var metadata = new DocumentMetadata { Title = "T", Toc = true };
+        var xml = MarkdownToXmlEmitter.Emit("# Hi", metadata, "test");
+        var doc = XDocument.Parse(xml);
+        doc.Root!.Attribute("toc").Should().BeNull();
+    }
+
+    [Fact]
+    public void Emit_TocNull_OmitsTocAttribute()
+    {
+        var metadata = new DocumentMetadata { Title = "T" };
+        var xml = MarkdownToXmlEmitter.Emit("# Hi", metadata, "test");
+        var doc = XDocument.Parse(xml);
+        doc.Root!.Attribute("toc").Should().BeNull();
+    }
 }

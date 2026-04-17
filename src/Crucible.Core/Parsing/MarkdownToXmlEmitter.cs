@@ -57,6 +57,11 @@ public static class MarkdownToXmlEmitter
             writer.WriteAttributeString("description", metadata.Description);
         }
 
+        if (metadata.Toc == false)
+        {
+            writer.WriteAttributeString("toc", "false");
+        }
+
         if (metadata.Updated.HasValue)
         {
             writer.WriteAttributeString("updated",
