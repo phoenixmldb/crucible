@@ -45,6 +45,42 @@ public class MarkdownToXmlEmitterTests
     }
 
     [Fact]
+    public void Emit_FencedCodeBlock_LanguageOnly_NoFilenameAttribute()
+    {
+        var doc = Emit("```bash\necho hi\n```");
+        var code = doc.Root!.Element("body")!.Element("code-block")!;
+        code.Attribute("language")!.Value.Should().Be("bash");
+        code.Attribute("filename").Should().BeNull();
+    }
+
+    [Fact]
+    public void Emit_FencedCodeBlock_WithTitleDoubleQuoted_ExtractsFilename()
+    {
+        var doc = Emit("```bash title=\"install.sh\"\necho hi\n```");
+        var code = doc.Root!.Element("body")!.Element("code-block")!;
+        code.Attribute("language")!.Value.Should().Be("bash");
+        code.Attribute("filename")!.Value.Should().Be("install.sh");
+    }
+
+    [Fact]
+    public void Emit_FencedCodeBlock_WithTitleSingleQuoted_ExtractsFilename()
+    {
+        var doc = Emit("```bash title='install.sh'\necho hi\n```");
+        var code = doc.Root!.Element("body")!.Element("code-block")!;
+        code.Attribute("language")!.Value.Should().Be("bash");
+        code.Attribute("filename")!.Value.Should().Be("install.sh");
+    }
+
+    [Fact]
+    public void Emit_FencedCodeBlock_WithUnknownTrailingArgs_IgnoresThem()
+    {
+        var doc = Emit("```bash extra-junk=1\necho hi\n```");
+        var code = doc.Root!.Element("body")!.Element("code-block")!;
+        code.Attribute("language")!.Value.Should().Be("bash");
+        code.Attribute("filename").Should().BeNull();
+    }
+
+    [Fact]
     public void Emit_UnorderedList_ProducesListElement()
     {
         var doc = Emit("- Item A\n- Item B");
@@ -173,5 +209,32 @@ public class MarkdownToXmlEmitterTests
             linkResolver: resolver);
         var link = doc.Root!.Element("body")!.Element("paragraph")!.Element("link")!;
         link.Attribute("href")!.Value.Should().Be("https://google.com");
+    }
+
+    [Fact]
+    public void Emit_TocFalse_WritesTocAttribute()
+    {
+        var metadata = new DocumentMetadata { Title = "T", Toc = false };
+        var xml = MarkdownToXmlEmitter.Emit("# Hi", metadata, "test");
+        var doc = XDocument.Parse(xml);
+        doc.Root!.Attribute("toc")!.Value.Should().Be("false");
+    }
+
+    [Fact]
+    public void Emit_TocTrue_OmitsTocAttribute()
+    {
+        var metadata = new DocumentMetadata { Title = "T", Toc = true };
+        var xml = MarkdownToXmlEmitter.Emit("# Hi", metadata, "test");
+        var doc = XDocument.Parse(xml);
+        doc.Root!.Attribute("toc").Should().BeNull();
+    }
+
+    [Fact]
+    public void Emit_TocNull_OmitsTocAttribute()
+    {
+        var metadata = new DocumentMetadata { Title = "T" };
+        var xml = MarkdownToXmlEmitter.Emit("# Hi", metadata, "test");
+        var doc = XDocument.Parse(xml);
+        doc.Root!.Attribute("toc").Should().BeNull();
     }
 }

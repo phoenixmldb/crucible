@@ -57,6 +57,11 @@ public static class MarkdownToXmlEmitter
             writer.WriteAttributeString("description", metadata.Description);
         }
 
+        if (metadata.Toc == false)
+        {
+            writer.WriteAttributeString("toc", "false");
+        }
+
         if (metadata.Updated.HasValue)
         {
             writer.WriteAttributeString("updated",
@@ -208,13 +213,50 @@ public static class MarkdownToXmlEmitter
     {
         ctx.Writer.WriteStartElement("code-block");
 
-        if (!string.IsNullOrEmpty(fenced.Info))
+        var combined = string.IsNullOrEmpty(fenced.Arguments)
+            ? fenced.Info ?? string.Empty
+            : $"{fenced.Info} {fenced.Arguments}";
+        if (!string.IsNullOrEmpty(combined))
         {
-            ctx.Writer.WriteAttributeString("language", fenced.Info);
+            var (language, filename) = ParseFenceInfo(combined);
+            if (!string.IsNullOrEmpty(language))
+            {
+                ctx.Writer.WriteAttributeString("language", language);
+            }
+            if (!string.IsNullOrEmpty(filename))
+            {
+                ctx.Writer.WriteAttributeString("filename", filename);
+            }
         }
 
         ctx.Writer.WriteString(ExtractLines(fenced));
         ctx.Writer.WriteEndElement();
+    }
+
+    private static (string Language, string? Filename) ParseFenceInfo(string info)
+    {
+        var trimmed = info.Trim();
+        var firstSpace = trimmed.IndexOf(' ', StringComparison.Ordinal);
+        if (firstSpace < 0)
+        {
+            return (trimmed, null);
+        }
+
+        var language = trimmed[..firstSpace];
+        var rest = trimmed[(firstSpace + 1)..];
+
+        foreach (var quote in new[] { '"', '\'' })
+        {
+            var key = $"title={quote}";
+            var start = rest.IndexOf(key, StringComparison.Ordinal);
+            if (start < 0) continue;
+            var valueStart = start + key.Length;
+            var valueEnd = rest.IndexOf(quote, valueStart);
+            if (valueEnd < 0) continue;
+            return (language, rest[valueStart..valueEnd]);
+        }
+
+        return (language, null);
     }
 
     private static void EmitList(ListBlock list, XmlEmitterContext ctx,

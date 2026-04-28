@@ -12,6 +12,7 @@ public sealed class DocumentMetadata
     public List<string> Tags { get; set; } = [];
     public bool Draft { get; set; }
     public string? Template { get; set; }
+    public bool? Toc { get; set; }
 
     [YamlDotNet.Serialization.YamlIgnore]
     public Dictionary<string, object?> Extra { get; set; } = [];
