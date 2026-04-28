@@ -90,7 +90,7 @@
         </div>
 
         <footer class="site-footer">
-          <p>Built with <a href="https://github.com/phoenixmldb/crucible" target="_blank" noreferrer="noreferrer" noopener="noopener">Crucible</a> by <a href="https://endpointsystems.com" target="_blank" noreferrer="noreferrer" noopener="noopener">Endpoint Systems</a></p>
+          <p>Built with <a href="https://github.com/phoenixmldb/crucible" target="_blank" rel="noopener noreferrer">Crucible</a> by <a href="https://endpointsystems.com" target="_blank" rel="noopener noreferrer">Endpoint Systems</a></p>
         </footer>
 
         <script src="https://unpkg.com/lunr/lunr.js"></script>

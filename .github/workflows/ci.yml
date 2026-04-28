@@ -31,7 +31,7 @@ jobs:
         id: version
         run: |
           COMMIT_COUNT=$(git rev-list --count HEAD)
-          VERSION="1.0.${COMMIT_COUNT}"
+          VERSION="1.1.${COMMIT_COUNT}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Version: ${VERSION}"
 
