@@ -30,6 +30,14 @@
         <script>
           (function(){var t=localStorage.getItem("crucible-theme");if(t)document.documentElement.setAttribute("data-theme",t)})();
         </script>
+        <!-- TODO: replace with config-driven analytics block (see follow-up issue) -->
+        <script async="async" src="https://www.googletagmanager.com/gtag/js?id=G-FSCPKZ7RES"/>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-FSCPKZ7RES');
+        </script>
       </head>
       <body>
         <header class="site-header">
