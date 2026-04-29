@@ -69,7 +69,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -82,15 +81,9 @@ jobs:
           dotnet-version: '10.0.x'
           dotnet-quality: 'preview'
 
-      - name: Login to NuGet via trusted publisher
-        id: nuget-login
-        uses: NuGet/login@v1
-        with:
-          user: phoenixml
-
       - name: Push to NuGet
         env:
-          NUGET_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+          NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
           for pkg in ./artifacts/*.nupkg; do
             dotnet nuget push "$pkg" \
