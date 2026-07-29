@@ -17,7 +17,7 @@
 
   <xsl:template match="page">
     <url xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-      <loc><xsl:value-of select="concat(ancestor::site/@base-url, @path, '.html')"/></loc>
+      <loc><xsl:value-of select="concat(ancestor::site/@base-url, @path[. != 'index'])"/></loc>
       <xsl:if test="@updated">
         <lastmod><xsl:value-of select="@updated"/></lastmod>
       </xsl:if>

@@ -23,10 +23,10 @@
         <xsl:if test="@description">
           <meta name="description" content="{@description}"/>
         </xsl:if>
-        <link rel="canonical" href="{$base-url}{@path}.html"/>
+        <link rel="canonical" href="{$base-url}{@path[. != 'index']}"/>
         <meta property="og:title" content="{@title}"/>
         <meta property="og:type" content="article"/>
-        <meta property="og:url" content="{$base-url}{@path}.html"/>
+        <meta property="og:url" content="{$base-url}{@path[. != 'index']}"/>
         <xsl:if test="@description">
           <meta property="og:description" content="{@description}"/>
         </xsl:if>
@@ -48,7 +48,7 @@
       </head>
       <body>
         <header class="site-header">
-          <a href="{$base-url}index.html" class="site-logo"><xsl:value-of select="$site-title"/></a>
+          <a href="{$base-url}" class="site-logo"><xsl:value-of select="$site-title"/></a>
           <div class="header-actions">
             <button class="search-trigger" id="search-trigger" aria-label="Search documentation">
               <span class="search-icon">🔍</span>
@@ -141,7 +141,7 @@
       <xsl:if test="@path = $current-path">
         <xsl:attribute name="class">active</xsl:attribute>
       </xsl:if>
-      <a href="{$base-url}{@path}.html"><xsl:value-of select="@title"/></a>
+      <a href="{$base-url}{@path[. != 'index']}"><xsl:value-of select="@title"/></a>
     </li>
   </xsl:template>
 
