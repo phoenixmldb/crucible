@@ -4,6 +4,13 @@
     <RootNamespace>Crucible.Extensions</RootNamespace>
     <Description>Built-in extensions for the Crucible documentation generator</Description>
     <PackageTags>crucible;extensions;mermaid;documentation</PackageTags>
+
+    <!-- Not published. It was, from 1.0.0 through 1.1.47, but every one of those
+         versions was unrestorable: the ProjectReference to Crucible.Core became a
+         hard NuGet dependency on a package that was never published (NU1101).
+         These extensions ship inside the crucible.cli tool, which is how they are
+         actually consumed. See the NuGet section of RELEASES.md. -->
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>

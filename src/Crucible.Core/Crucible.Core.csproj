@@ -4,6 +4,13 @@
     <RootNamespace>Crucible.Core</RootNamespace>
     <Description>Pipeline engine for the Crucible static documentation generator</Description>
     <PackageTags>documentation;markdown;xslt;static-site;xml</PackageTags>
+
+    <!-- Not published. This assembly ships inside the crucible.cli tool package,
+         which PackAsTool builds from the full publish output. Publishing it as a
+         standalone library would also mean shipping Themes/ as package content
+         and supporting it as a public API surface; nothing consumes it that way
+         today. See the NuGet section of RELEASES.md. -->
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,20 +20,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Theme assets ship next to the assembly: ThemeLoader resolves built-in
-         themes from AppContext.BaseDirectory, so they must reach the output
-         directory of anything that consumes this package, not just our own
-         build. PackageCopyToOutput carries them through a PackageReference.
+    <!-- Theme assets ship next to the assembly, because ThemeLoader resolves
+         built-in themes from AppContext.BaseDirectory. Copying to the output
+         directory is enough: the crucible.cli tool package is built from the
+         publish output, so Themes/ flows into it from here.
 
          Exclude the C# sources that live in this folder (ThemeLoader.cs) — the
          glob would otherwise copy them to the output directory and into the
-         published packages. Maintainer docs are excluded for the same reason. -->
-    <Content Include="Themes/**/*"
-             Exclude="Themes/**/*.cs;Themes/**/*.md"
-             CopyToOutputDirectory="PreserveNewest"
-             Pack="true"
-             PackagePath="contentFiles/any/$(TargetFramework)/Themes"
-             PackageCopyToOutput="true" />
+         published tool. Maintainer docs are excluded for the same reason. -->
+    <None Include="Themes/**/*"
+          Exclude="Themes/**/*.cs;Themes/**/*.md"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

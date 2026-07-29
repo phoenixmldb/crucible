@@ -54,16 +54,10 @@ jobs:
         env:
           PKG_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          # Crucible.Core must be packed and published too: Crucible.Extensions
-          # carries a ProjectReference to it, which becomes a hard NuGet
-          # dependency in its nuspec. Publishing Extensions without Core left
-          # every released version of crucible.extensions unrestorable
-          # (NU1101: Unable to find package Crucible.Core).
-          dotnet pack src/Crucible.Core -c Release --no-build \
-            -p:PackageVersion="$PKG_VERSION" -o ./artifacts
+          # crucible.cli is the only published package. Crucible.Core and
+          # Crucible.Extensions are IsPackable=false — they ship inside the tool,
+          # which PackAsTool builds from the full publish output.
           dotnet pack src/Crucible.Cli -c Release --no-build \
-            -p:PackageVersion="$PKG_VERSION" -o ./artifacts
-          dotnet pack src/Crucible.Extensions -c Release --no-build \
             -p:PackageVersion="$PKG_VERSION" -o ./artifacts
 
       - name: Upload artifacts
@@ -72,10 +66,10 @@ jobs:
           name: nuget-packages
           path: ./artifacts/*.nupkg
 
-  # Consumes the packages exactly as a user would, from a local feed. The test
-  # suite runs on ProjectReferences, so it cannot see packaging faults: every
-  # published crucible.extensions from 1.0.0 to 1.1.47 failed to restore with
-  # NU1101 while CI stayed green.
+  # Installs the packed tool exactly as a user would, from a local feed. The test
+  # suite runs on ProjectReferences and never touches a .nupkg, so it cannot see
+  # packaging faults — which is how crucible.extensions shipped unrestorable five
+  # times (NU1101) while CI stayed green.
   package-smoke:
     needs: build
     runs-on: ubuntu-latest
@@ -110,13 +104,20 @@ jobs:
           EOF
           cat nuget.config
 
-      - name: Library package restores and builds
+      - name: Only the tool is published
         run: |
-          dotnet new classlib -o consumer -f net10.0
-          cp nuget.config consumer/
-          cd consumer
-          dotnet add package Crucible.Extensions --version "$PKG_VERSION"
-          dotnet build -c Release
+          # Guards the IsPackable=false settings on Crucible.Core and
+          # Crucible.Extensions. Publishing either as a library means committing
+          # to a public API surface and, for Core, shipping Themes/ as package
+          # content — a deliberate decision, not something to regress into.
+          unexpected=$(find ./artifacts -name '*.nupkg' \
+            ! -name "crucible.cli.${PKG_VERSION}.nupkg" -printf '%f\n')
+          if [ -n "$unexpected" ]; then
+            echo "::error::unexpected package(s) packed: $unexpected"
+            exit 1
+          fi
+          test -f "./artifacts/crucible.cli.${PKG_VERSION}.nupkg"
+          echo "artifacts contain only crucible.cli ${PKG_VERSION}"
 
       - name: Tool installs and reports its own version
         run: |
@@ -169,23 +170,17 @@ jobs:
           NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
           PKG_VERSION: ${{ needs.build.outputs.version }}
         run: |
-          # Dependency order, and it matters. Crucible.Extensions declares a hard
-          # dependency on Crucible.Core, so publishing Extensions when Core did
-          # not make it produces an unrestorable package — the NU1101 failure
-          # this pipeline exists to prevent, in a version NuGet will not let you
-          # delete. `set -e` aborts the moment any push fails, so a partial
-          # publish can only ever be a prefix of this list.
+          # One package, named explicitly rather than globbed: a glob would
+          # silently publish anything that appeared in ./artifacts, and the
+          # libraries are deliberately not published.
           set -e
-          for id in Crucible.Core crucible.cli Crucible.Extensions; do
-            pkg="./artifacts/${id}.${PKG_VERSION}.nupkg"
-            if [ ! -f "$pkg" ]; then
-              echo "::error::expected package not found: $pkg"
-              ls -1 ./artifacts
-              exit 1
-            fi
-            echo "--- pushing $id $PKG_VERSION"
-            dotnet nuget push "$pkg" \
-              --api-key "$NUGET_KEY" \
-              --source https://api.nuget.org/v3/index.json \
-              --skip-duplicate
-          done
+          pkg="./artifacts/crucible.cli.${PKG_VERSION}.nupkg"
+          if [ ! -f "$pkg" ]; then
+            echo "::error::expected package not found: $pkg"
+            ls -1 ./artifacts
+            exit 1
+          fi
+          dotnet nuget push "$pkg" \
+            --api-key "$NUGET_KEY" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate

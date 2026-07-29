@@ -99,18 +99,33 @@
   (paid for commercial use); 6.12.2 is the last MIT release.
 
 ### NuGet
-- **`Crucible.Core` is now published.** `crucible.extensions` has carried a hard
-  dependency on it since 1.0.0, but CI packed only `Crucible.Cli` and
-  `Crucible.Extensions`, so that dependency has never resolved — every published
-  `crucible.extensions` (`1.0.0`, `1.1.44`–`1.1.47`) fails to restore with
-  `NU1101: Unable to find package Crucible.Core`. `crucible.cli` is unaffected;
-  `PackAsTool` bundles Core into the tool rather than referencing it.
+- **`crucible.cli` is now the only published package.** `Crucible.Core` and
+  `Crucible.Extensions` are `IsPackable=false`; both ship *inside* the tool,
+  which `PackAsTool` builds from the full publish output.
 
-  Theme assets moved from `None` to `Content` with `PackageCopyToOutput` so that
-  consumers of the `Crucible.Core` package get `Themes/` in their own output
-  directory — `ThemeLoader` resolves built-in themes from
-  `AppContext.BaseDirectory`, so without this the package would restore but fail
-  at runtime.
+  `crucible.extensions` was published from `1.0.0` through `1.1.47` and **every
+  one of those versions is unrestorable**. Its `ProjectReference` to
+  `Crucible.Core` became a hard NuGet dependency on a package CI never packed:
+
+  ```
+  error: NU1101: Unable to find package Crucible.Core.
+  error: Package 'crucible.extensions' is incompatible with 'all' frameworks
+  ```
+
+  `crucible.cli` was never affected. Download counts across those versions are
+  flat (~100 each) despite being impossible to install, which is mirror and
+  scanner traffic rather than consumers — no evidence anything used it as a
+  library.
+
+  Publishing the libraries properly would mean committing to a public API
+  surface, and for `Crucible.Core` also shipping `Themes/` as package content,
+  since `ThemeLoader` resolves built-in themes from `AppContext.BaseDirectory`.
+  That is a deliberate decision to make later, not a side effect of fixing a
+  broken dependency. A CI guard fails the build if anything other than
+  `crucible.cli` appears in the pack output.
+
+  The stale `crucible.extensions` versions remain listed on nuget.org; unlisting
+  them is a separate manual step.
 
 ---
 
