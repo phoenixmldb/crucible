@@ -9,11 +9,16 @@
   var documents = null;
   var debounceTimer = null;
 
+  // Injected by page.xslt from the site's base-url. Hardcoding "/" here broke
+  // every subpath deploy (GitHub Pages project sites, docs under /docs/).
+  var BASE = window.CRUCIBLE_BASE || "/";
+  if (BASE.charAt(BASE.length - 1) !== "/") BASE += "/";
+
   // Load the search index on first focus
   searchInput.addEventListener("focus", loadIndex, { once: true });
 
   function loadIndex() {
-    fetch("/search-index.json")
+    fetch(BASE + "search-index.json")
       .then(function (r) { return r.json(); })
       .then(function (data) {
         documents = {};
@@ -95,7 +100,7 @@
 
       var link = document.createElement("a");
       link.className = "search-result";
-      link.href = "/" + doc.path + ".html";
+      link.href = BASE + doc.path + ".html";
 
       var titleDiv = document.createElement("div");
       titleDiv.className = "search-result-title";

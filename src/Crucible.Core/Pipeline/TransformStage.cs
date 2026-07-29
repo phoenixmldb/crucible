@@ -3,6 +3,7 @@ namespace Crucible.Core.Pipeline;
 using System.Diagnostics;
 using System.Xml.Linq;
 using Crucible.Core.Extensions;
+using Crucible.Core.Models;
 using Crucible.Core.Search;
 using Crucible.Core.Themes;
 using PhoenixmlDb.Xslt;
@@ -14,6 +15,7 @@ public static class TransformStage
         string outputDir,
         string? themePath,
         IEnumerable<ICrucibleExtension> extensions,
+        AnalyticsConfig? analytics = null,
         CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(inputDir);
@@ -62,7 +64,18 @@ public static class TransformStage
             }
         }
 
-        // Transform all pages, reusing a single compiled stylesheet
+        // Compile the page stylesheet once. Measured on a 100-page site with the
+        // modern theme: ~4830ms re-loading per page vs ~2970ms compiling once
+        // (~19ms/page). Every parameter the stylesheet reads is re-set on every
+        // iteration below, so no per-page value can leak into the next page.
+        //
+        // The transformer is reused only because the built-in themes produce a
+        // single result tree. A theme using xsl:result-document would accumulate
+        // entries in SecondaryResultDocuments across pages, so if that is ever
+        // supported this must go back to one transformer per page.
+        var pageTransformer = new XsltTransformer();
+        await pageTransformer.LoadStylesheetAsync(theme.PageXslt, pageXsltBaseUri).ConfigureAwait(true);
+
         foreach (var xmlFile in pageFiles)
         {
             ct.ThrowIfCancellationRequested();
@@ -74,16 +87,12 @@ public static class TransformStage
 
             try
             {
-                // Create a new transformer per page (XsltTransformer holds per-transform state
-                // like parameters and secondary documents, so it can't be fully reused).
-                // But the stylesheet compilation is the expensive part — if the engine caches
-                // compiled stylesheets internally, this is fast.
-                var transformer = new XsltTransformer();
-                await transformer.LoadStylesheetAsync(theme.PageXslt, pageXsltBaseUri).ConfigureAwait(true);
+                var transformer = pageTransformer;
                 transformer.SetParameter("site-manifest-uri", manifestUri);
                 transformer.SetParameter("base-url", baseUrl);
                 transformer.SetParameter("site-title", siteTitle);
                 transformer.SetParameter("current-path", currentPath);
+                transformer.SetParameter("ga4-id", analytics?.Ga4 ?? "");
 
                 var documentXml = await File.ReadAllTextAsync(xmlFile, ct).ConfigureAwait(true);
                 var html = await transformer.TransformAsync(documentXml, ct).ConfigureAwait(true);

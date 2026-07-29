@@ -140,6 +140,12 @@ kbd {
   font-size: 11px;
   color: var(--fg-muted);
 }
+/* page.xslt marks the section containing the current page with .open. This
+   sidebar is always expanded by design, so .open only shows you where you are. */
+.nav-section.open > .nav-section-title {
+  color: var(--fg);
+  font-weight: 600;
+}
 .nav-tree li a {
   display: block;
   padding: 4px 8px;

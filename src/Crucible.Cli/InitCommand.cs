@@ -19,9 +19,11 @@ internal static class InitCommand
             base-url: /
             source: ./docs
             output: ./dist
-            # theme: ./my-theme   # Uncomment to use a custom theme
+            # theme: ./my-theme   # Uncomment to use a custom theme, or: theme: modern
             # extensions:
             #   - Crucible.Extensions.Mermaid
+            # analytics:          # Opt-in; nothing is emitted unless you set this
+            #   ga4: G-XXXXXXXXXX
             """).ConfigureAwait(true);
 
         var docsDir = Path.Combine(Directory.GetCurrentDirectory(), "docs");

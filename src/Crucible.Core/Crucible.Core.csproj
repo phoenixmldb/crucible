@@ -13,7 +13,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Themes/**/*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Theme assets ship next to the assembly. Exclude the C# sources that live
+         in this folder (ThemeLoader.cs) — the glob would otherwise copy them to
+         the output directory and into the published tool package. Maintainer
+         docs are excluded for the same reason. -->
+    <None Include="Themes/**/*"
+          Exclude="Themes/**/*.cs;Themes/**/*.md"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

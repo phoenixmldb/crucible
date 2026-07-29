@@ -31,12 +31,36 @@ public sealed class MermaidExtension : ICrucibleExtension
 
     public IEnumerable<CrucibleAsset> GetAssets()
     {
+        // Referenced by the built-in themes via the mermaid-scripts template,
+        // which emits it once per page and only when a diagram is present.
+        //
+        // startOnLoad is deliberately false: this script is included after the
+        // mermaid runtime, so auto-start may already have run (or not) depending
+        // on load timing. Driving mermaid.run() explicitly is deterministic.
         var script = Encoding.UTF8.GetBytes("""
-            document.addEventListener('DOMContentLoaded', function() {
-                if (typeof mermaid !== 'undefined') {
-                    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+            (function () {
+                function render() {
+                    if (typeof mermaid === 'undefined') return;
+                    var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+                    mermaid.initialize({
+                        startOnLoad: false,
+                        theme: dark ? 'dark' : 'default'
+                    });
+                    var nodes = document.querySelectorAll('pre.mermaid');
+                    if (!nodes.length) return;
+                    if (typeof mermaid.run === 'function') {
+                        mermaid.run({ nodes: nodes });
+                    } else {
+                        mermaid.init(undefined, nodes);
+                    }
                 }
-            });
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', render);
+                } else {
+                    render();
+                }
+            })();
             """);
         yield return new CrucibleAsset("js/mermaid-init.js",
             "application/javascript", new ReadOnlyMemory<byte>(script));

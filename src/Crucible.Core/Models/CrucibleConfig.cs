@@ -15,4 +15,7 @@ public sealed class CrucibleConfig
     public string Output { get; set; } = "./dist";
     public string? Theme { get; set; }
     public List<string> Extensions { get; set; } = [];
+
+    /// <summary>Opt-in analytics. No tracking is emitted when this is null.</summary>
+    public AnalyticsConfig? Analytics { get; set; }
 }

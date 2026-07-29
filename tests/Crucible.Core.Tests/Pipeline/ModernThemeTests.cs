@@ -1,12 +1,16 @@
 namespace Crucible.Core.Tests.Pipeline;
 
+using Crucible.Core.Models;
 using Crucible.Core.Pipeline;
 using FluentAssertions;
 using Xunit;
 
 public class ModernThemeTests
 {
-    private static async Task<string> BuildAndReadAsync(string relativeHtmlPath)
+    private static async Task<string> BuildAndReadAsync(
+        string relativeHtmlPath,
+        string baseUrl = "/",
+        AnalyticsConfig? analytics = null)
     {
         var sourceDir = Path.Combine(AppContext.BaseDirectory, "Fixtures", "modern-site");
         var intermediateDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
@@ -16,12 +20,13 @@ public class ModernThemeTests
         try
         {
             var parseResult = await ParseStage.ExecuteAsync(sourceDir, intermediateDir,
-                title: "Modern Site", baseUrl: "/",
+                title: "Modern Site", baseUrl: baseUrl,
                 extensions: [], includeDrafts: false, ct: ct).ConfigureAwait(false);
             parseResult.Success.Should().BeTrue();
 
             var transformResult = await TransformStage.ExecuteAsync(
-                intermediateDir, outputDir, themePath: "modern", extensions: [], ct: ct).ConfigureAwait(false);
+                intermediateDir, outputDir, themePath: "modern", extensions: [],
+                analytics: analytics, ct: ct).ConfigureAwait(false);
             transformResult.Success.Should().BeTrue();
 
             return await File.ReadAllTextAsync(Path.Combine(outputDir, relativeHtmlPath), ct).ConfigureAwait(false);
@@ -77,5 +82,37 @@ public class ModernThemeTests
         html.Should().Contain("js/search.js");
         html.Should().Contain("js/toc.js");
         html.Should().Contain("js/copy.js");
+    }
+
+    [Fact]
+    public async Task Build_WithoutAnalyticsConfig_EmitsNoTrackingScript()
+    {
+        var html = await BuildAndReadAsync("index.html");
+
+        // A generated site must never phone home to an ID the user did not configure.
+        html.Should().NotContain("googletagmanager.com");
+        html.Should().NotContain("G-FSCPKZ7RES");
+        html.Should().NotContain("gtag(");
+    }
+
+    [Fact]
+    public async Task Build_WithGa4Configured_EmitsThatMeasurementId()
+    {
+        var html = await BuildAndReadAsync("index.html",
+            analytics: new AnalyticsConfig { Ga4 = "G-TESTID123" });
+
+        html.Should().Contain("https://www.googletagmanager.com/gtag/js?id=G-TESTID123");
+        html.Should().Contain("gtag('config', 'G-TESTID123')");
+    }
+
+    [Fact]
+    public async Task Build_ExposesBaseUrlToScripts()
+    {
+        var html = await BuildAndReadAsync(Path.Combine("guides", "install.html"),
+            baseUrl: "/docs/");
+
+        // search.js resolves search-index.json and result hrefs against this value;
+        // without it, nested pages fetch a sibling path that does not exist.
+        html.Should().Contain("window.CRUCIBLE_BASE = \"/docs/\"");
     }
 }
