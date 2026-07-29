@@ -13,18 +13,6 @@
   on every nested page). Both now resolve against `window.CRUCIBLE_BASE`,
   injected by `page.xslt`. Result links were wrong in the same two ways.
 
-### Changed
-- **Analytics is now opt-in and config-driven.** The modern theme hardcoded the
-  Endpoint Systems GA4 property (`G-FSCPKZ7RES`), so every site built with
-  `-t modern` reported traffic into it. Generated sites now emit no tracking
-  unless `analytics.ga4` is set in `crucible.yaml`:
-  ```yaml
-  analytics:
-    ga4: G-XXXXXXXXXX
-  ```
-  Supported by both built-in themes. `TransformStage.ExecuteAsync` takes a new
-  optional `analytics` parameter before `ct`.
-
 - **Mermaid was included per diagram, and its init script never at all.** The
   runtime `<script>` lived in the per-diagram template, so a page with N
   diagrams pulled the same multi-megabyte CDN bundle N times, while the
@@ -45,6 +33,16 @@
   directory that is not a theme, instead of failing inside `File.ReadAllText`.
 
 ### Changed
+- **Analytics is now opt-in and config-driven.** The modern theme hardcoded the
+  Endpoint Systems GA4 property (`G-FSCPKZ7RES`) in 1.1.47, so every site built
+  with `-t modern` reported traffic into it. Generated sites now emit no
+  tracking unless `analytics.ga4` is set in `crucible.yaml`:
+  ```yaml
+  analytics:
+    ga4: G-XXXXXXXXXX
+  ```
+  Supported by both built-in themes. `TransformStage.ExecuteAsync` takes a new
+  optional `analytics` parameter before `ct`.
 - **Shared theme XSLT.** `default/page.xslt` and `modern/page.xslt` duplicated
   ~140 lines of body-element templates, and their sitemaps were byte-identical.
   Both now `xsl:import` `Themes/_base/elements.xslt` and `_base/sitemap.xslt`;
@@ -74,6 +72,49 @@
 - `coverlet.collector` `8.0.1` → `10.0.1`
 - `FluentAssertions` held at `6.12.2` — 7.x/8.x moved to the Xceed license
   (paid for commercial use); 6.12.2 is the last MIT release.
+
+### NuGet
+- **`Crucible.Core` is now published.** `crucible.extensions` has carried a hard
+  dependency on it since 1.0.0, but CI packed only `Crucible.Cli` and
+  `Crucible.Extensions`, so that dependency has never resolved — every published
+  `crucible.extensions` (`1.0.0`, `1.1.44`–`1.1.47`) fails to restore with
+  `NU1101: Unable to find package Crucible.Core`. `crucible.cli` is unaffected;
+  `PackAsTool` bundles Core into the tool rather than referencing it.
+
+  Theme assets moved from `None` to `Content` with `PackageCopyToOutput` so that
+  consumers of the `Crucible.Core` package get `Themes/` in their own output
+  directory — `ThemeLoader` resolves built-in themes from
+  `AppContext.BaseDirectory`, so without this the package would restore but fail
+  at runtime.
+
+---
+
+## 1.1.47 — 2026-04-28
+
+Published 02:32 UTC (`86b1c3f`).
+
+### Added
+- **Modern theme: Google Analytics 4 tag.** A hardcoded `G-FSCPKZ7RES` gtag
+  snippet in `modern/page.xslt`, added for phoenixml.dev.
+
+  This was the only change in the release; the packaged payload differs from
+  1.1.46 by exactly those eight lines. It was intentional at the time ("only one
+  site uses this theme today") but meant every site built with `-t modern`
+  reported into the Endpoint Systems property. Replaced by opt-in
+  `analytics.ga4` configuration — see Unreleased.
+
+---
+
+## 1.1.46 — 2026-04-28
+
+Published 00:58 UTC (`5d5d07a`). **No functional change.**
+
+A documentation-only commit syncing `RELEASES.md` with the 1.1.45 publish.
+Because CI publishes on every push to `main`, it produced a NuGet release whose
+payload is byte-identical to 1.1.45 apart from version stamping — the shipped
+`Themes/` tree diffs clean against 1.1.45.
+
+Nothing to upgrade for. Noted so the version sequence has no unexplained holes.
 
 ---
 
