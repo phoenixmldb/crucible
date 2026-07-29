@@ -167,8 +167,23 @@ jobs:
       - name: Push to NuGet
         env:
           NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
+          PKG_VERSION: ${{ needs.build.outputs.version }}
         run: |
-          for pkg in ./artifacts/*.nupkg; do
+          # Dependency order, and it matters. Crucible.Extensions declares a hard
+          # dependency on Crucible.Core, so publishing Extensions when Core did
+          # not make it produces an unrestorable package — the NU1101 failure
+          # this pipeline exists to prevent, in a version NuGet will not let you
+          # delete. `set -e` aborts the moment any push fails, so a partial
+          # publish can only ever be a prefix of this list.
+          set -e
+          for id in Crucible.Core crucible.cli Crucible.Extensions; do
+            pkg="./artifacts/${id}.${PKG_VERSION}.nupkg"
+            if [ ! -f "$pkg" ]; then
+              echo "::error::expected package not found: $pkg"
+              ls -1 ./artifacts
+              exit 1
+            fi
+            echo "--- pushing $id $PKG_VERSION"
             dotnet nuget push "$pkg" \
               --api-key "$NUGET_KEY" \
               --source https://api.nuget.org/v3/index.json \
