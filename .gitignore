@@ -46,3 +46,6 @@ Thumbs.db
 ## Crucible-specific
 dist/
 intermediate/
+
+## Local agent scratch (not for the public repo)
+.superpowers/
