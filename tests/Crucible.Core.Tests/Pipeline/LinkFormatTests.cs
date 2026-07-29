@@ -104,8 +104,10 @@ public class LinkFormatTests
             Path.Combine(AppContext.BaseDirectory, "Themes", theme, "js", "search.js"),
             TestContext.Current.CancellationToken).ConfigureAwait(true);
 
-        searchJs.Should().Contain("path === \"index\" ? \"\" : path",
-            "result hrefs must collapse the site root exactly as page.xslt does");
+        // The JS must implement the same rule as c:page-url in _base/urls.xslt,
+        // whose XPath pattern is: replace($path, '(^|/)index$', '$1')
+        searchJs.Should().Contain("path.replace(/(^|\\/)index$/, \"$1\")",
+            "result hrefs must collapse a trailing index segment exactly as c:page-url does");
         searchJs.Should().NotContain("+ \".html\"",
             "the markup emits extensionless URLs; search results must match");
     }

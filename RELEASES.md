@@ -31,6 +31,20 @@
   Now excludes `*.cs` and `*.md`.
 - `ThemeLoader` gives a clear error naming the missing file when pointed at a
   directory that is not a theme, instead of failing inside `File.ReadAllText`.
+- **Section landing pages were missing from `sitemap.xml`.** `SiteManifestBuilder`
+  treats a subdirectory's `index.md` as section metadata and omits it from the
+  manifest as a page — correct for navigation, but the sitemap is generated from
+  that same manifest, so those pages were rendered, published, and invisible to
+  crawlers. On a 112-page site that was 15 pages. `<section>` now carries an
+  `index-path` attribute and the sitemap lists it.
+- **URL construction is defined once.** Nav links, `canonical`/`og:url` and
+  sitemap `<loc>` each built URLs inline, and `search.js` built its own in
+  JavaScript. They are now all `c:page-url` from `Themes/_base/urls.xslt`
+  (mirrored in `search.js`, pinned together by `LinkFormatTests`). URLs are
+  extensionless and a trailing `index` segment collapses to its directory, so a
+  landing page and the directory it indexes share one canonical URL:
+  `guides/index` → `<base>guides/`.
+
 - **Modern theme: code blocks rendered in a different font than inline code.**
   `prism.css` shipped base rules for `code[class*=language-]`, whose attribute
   selector outranked the theme's plain `code` rule — so code blocks used

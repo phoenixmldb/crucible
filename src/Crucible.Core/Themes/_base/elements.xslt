@@ -14,7 +14,12 @@
   Note: custom themes (theme: ./my-theme) live outside Themes/ and therefore
   cannot import this file. They must be self-contained.
 -->
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="3.0">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                xmlns:c="https://phoenixml.dev/crucible"
+                exclude-result-prefixes="c"
+                version="3.0">
+
+  <xsl:import href="urls.xslt"/>
 
   <xsl:param name="base-url" select="'/'"/>
 

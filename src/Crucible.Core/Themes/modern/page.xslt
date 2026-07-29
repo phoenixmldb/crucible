@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="3.0">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                xmlns:c="https://phoenixml.dev/crucible"
+                exclude-result-prefixes="c"
+                version="3.0">
   <!-- Shared body-element templates. Must be the first declaration.
        This theme overrides code-block and table below. -->
   <xsl:import href="../_base/elements.xslt"/>
@@ -23,10 +26,10 @@
         <xsl:if test="@description">
           <meta name="description" content="{@description}"/>
         </xsl:if>
-        <link rel="canonical" href="{$base-url}{@path[. != 'index']}"/>
+        <link rel="canonical" href="{c:page-url($base-url, @path)}"/>
         <meta property="og:title" content="{@title}"/>
         <meta property="og:type" content="article"/>
-        <meta property="og:url" content="{$base-url}{@path[. != 'index']}"/>
+        <meta property="og:url" content="{c:page-url($base-url, @path)}"/>
         <xsl:if test="@description">
           <meta property="og:description" content="{@description}"/>
         </xsl:if>
@@ -141,7 +144,7 @@
       <xsl:if test="@path = $current-path">
         <xsl:attribute name="class">active</xsl:attribute>
       </xsl:if>
-      <a href="{$base-url}{@path[. != 'index']}"><xsl:value-of select="@title"/></a>
+      <a href="{c:page-url($base-url, @path)}"><xsl:value-of select="@title"/></a>
     </li>
   </xsl:template>
 

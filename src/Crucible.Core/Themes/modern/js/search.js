@@ -17,11 +17,14 @@
   var BASE = window.CRUCIBLE_BASE || "/";
   if (BASE.charAt(BASE.length - 1) !== "/") BASE += "/";
 
-  // Mirrors page.xslt's {$base-url}{@path[. != 'index']}: extensionless, and
-  // the site root collapses to the base URL. Search results must produce the
-  // same URL as the nav link and the canonical tag for a given page.
+  // Mirrors c:page-url in _base/urls.xslt: URLs are extensionless and a
+  // trailing "index" segment collapses to its directory, so a search result,
+  // a nav link and the canonical tag all name the same URL for a page.
+  //   index          -> <base>
+  //   guides/install -> <base>guides/install
+  //   guides/index   -> <base>guides/
   function pageUrl(path) {
-    return BASE + (path === "index" ? "" : path);
+    return BASE + path.replace(/(^|\/)index$/, "$1");
   }
 
   function ensureIndex() {
