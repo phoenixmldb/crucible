@@ -51,7 +51,8 @@ public sealed class BuildPipeline
 
             var transformSw = Stopwatch.StartNew();
             var transformResult = await TransformStage.ExecuteAsync(
-                parseOutput, _config.Output, _config.Theme, _extensions, ct).ConfigureAwait(true);
+                parseOutput, _config.Output, _config.Theme, _extensions,
+                _config.Analytics, ct).ConfigureAwait(true);
             result.Errors.AddRange(transformResult.Errors);
             result.Warnings.AddRange(transformResult.Warnings);
             transformSw.Stop();
@@ -65,7 +66,8 @@ public sealed class BuildPipeline
         {
             var transformSw = Stopwatch.StartNew();
             var transformResult = await TransformStage.ExecuteAsync(
-                _config.Source, _config.Output, _config.Theme, _extensions, ct).ConfigureAwait(true);
+                _config.Source, _config.Output, _config.Theme, _extensions,
+                _config.Analytics, ct).ConfigureAwait(true);
             result.Errors.AddRange(transformResult.Errors);
             result.Warnings.AddRange(transformResult.Warnings);
             transformSw.Stop();

@@ -13,7 +13,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Themes/**/*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Theme assets ship next to the assembly: ThemeLoader resolves built-in
+         themes from AppContext.BaseDirectory, so they must reach the output
+         directory of anything that consumes this package, not just our own
+         build. PackageCopyToOutput carries them through a PackageReference.
+
+         Exclude the C# sources that live in this folder (ThemeLoader.cs) — the
+         glob would otherwise copy them to the output directory and into the
+         published packages. Maintainer docs are excluded for the same reason. -->
+    <Content Include="Themes/**/*"
+             Exclude="Themes/**/*.cs;Themes/**/*.md"
+             CopyToOutputDirectory="PreserveNewest"
+             Pack="true"
+             PackagePath="contentFiles/any/$(TargetFramework)/Themes"
+             PackageCopyToOutput="true" />
   </ItemGroup>
 
 </Project>

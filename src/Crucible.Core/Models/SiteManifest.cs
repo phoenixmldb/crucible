@@ -32,4 +32,12 @@ public sealed class SiteSection : ISiteNode
     public required string Title { get; init; }
     public int? Sort { get; init; }
     public List<ISiteNode> Children { get; init; } = [];
+
+    /// <summary>
+    /// Path of this section's landing page (its <c>index.md</c>), or null when
+    /// the directory has none. The landing page is not a child of the section —
+    /// it supplies the section's own title and sort — but it is still rendered
+    /// as a real page, so consumers such as the sitemap need to know it exists.
+    /// </summary>
+    public string? IndexPath { get; init; }
 }

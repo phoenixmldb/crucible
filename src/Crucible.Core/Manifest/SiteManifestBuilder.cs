@@ -82,11 +82,16 @@ public static class SiteManifestBuilder
             var dirName = Path.GetFileName(subdir);
             var sectionTitle = dirName ?? "";
             int? sectionSort = null;
+            string? sectionIndexPath = null;
 
             // Check for index.md to get section metadata
             var indexFile = Path.Combine(subdir, "index.md");
             if (File.Exists(indexFile))
             {
+                // Recorded so the sitemap can list it: BuildChildren skips this
+                // file as a page, but it is still rendered to HTML.
+                sectionIndexPath = GetRelativePath(indexFile, rootDir);
+
                 var content = File.ReadAllText(indexFile);
                 var (metadata, _) = FrontmatterParser.Parse(content);
                 if (metadata != null && !string.IsNullOrEmpty(metadata.Title))
@@ -114,6 +119,7 @@ public static class SiteManifestBuilder
                 Title = sectionTitle,
                 Sort = sectionSort,
                 Children = sectionChildren,
+                IndexPath = sectionIndexPath,
             });
         }
 
@@ -168,6 +174,11 @@ public static class SiteManifestBuilder
             var element = new XElement("section",
                 new XAttribute("path", section.Path),
                 new XAttribute("title", section.Title));
+
+            if (!string.IsNullOrEmpty(section.IndexPath))
+            {
+                element.Add(new XAttribute("index-path", section.IndexPath));
+            }
 
             if (section.Sort.HasValue)
             {

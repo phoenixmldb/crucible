@@ -9,11 +9,26 @@
   var documents = null;
   var debounceTimer = null;
 
+  // Injected by page.xslt from the site's base-url. Hardcoding "/" here broke
+  // every subpath deploy (GitHub Pages project sites, docs under /docs/).
+  var BASE = window.CRUCIBLE_BASE || "/";
+  if (BASE.charAt(BASE.length - 1) !== "/") BASE += "/";
+
+  // Mirrors c:page-url in _base/urls.xslt: URLs are extensionless and a
+  // trailing "index" segment collapses to its directory, so a search result,
+  // a nav link and the canonical tag all name the same URL for a page.
+  //   index          -> <base>
+  //   guides/install -> <base>guides/install
+  //   guides/index   -> <base>guides/
+  function pageUrl(path) {
+    return BASE + path.replace(/(^|\/)index$/, "$1");
+  }
+
   // Load the search index on first focus
   searchInput.addEventListener("focus", loadIndex, { once: true });
 
   function loadIndex() {
-    fetch("/search-index.json")
+    fetch(BASE + "search-index.json")
       .then(function (r) { return r.json(); })
       .then(function (data) {
         documents = {};
@@ -95,7 +110,7 @@
 
       var link = document.createElement("a");
       link.className = "search-result";
-      link.href = "/" + doc.path + ".html";
+      link.href = pageUrl(doc.path);
 
       var titleDiv = document.createElement("div");
       titleDiv.className = "search-result-title";

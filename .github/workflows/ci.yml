@@ -17,6 +17,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -46,25 +48,106 @@ jobs:
       - name: Test
         run: dotnet test Crucible.slnx -c Release --no-restore --no-build --verbosity normal
 
+      # Packs on pull requests too, so package-smoke can gate a PR rather than
+      # only reporting after the release is already public.
       - name: Pack
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           PKG_VERSION: ${{ steps.version.outputs.version }}
         run: |
+          # Crucible.Core must be packed and published too: Crucible.Extensions
+          # carries a ProjectReference to it, which becomes a hard NuGet
+          # dependency in its nuspec. Publishing Extensions without Core left
+          # every released version of crucible.extensions unrestorable
+          # (NU1101: Unable to find package Crucible.Core).
+          dotnet pack src/Crucible.Core -c Release --no-build \
+            -p:PackageVersion="$PKG_VERSION" -o ./artifacts
           dotnet pack src/Crucible.Cli -c Release --no-build \
             -p:PackageVersion="$PKG_VERSION" -o ./artifacts
           dotnet pack src/Crucible.Extensions -c Release --no-build \
             -p:PackageVersion="$PKG_VERSION" -o ./artifacts
 
       - name: Upload artifacts
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: nuget-packages
           path: ./artifacts/*.nupkg
 
-  publish:
+  # Consumes the packages exactly as a user would, from a local feed. The test
+  # suite runs on ProjectReferences, so it cannot see packaging faults: every
+  # published crucible.extensions from 1.0.0 to 1.1.47 failed to restore with
+  # NU1101 while CI stayed green.
+  package-smoke:
     needs: build
+    runs-on: ubuntu-latest
+    env:
+      PKG_VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./artifacts
+
+      - name: Feed pointing at the freshly packed output
+        run: |
+          # Absolute path on purpose: NuGet resolves a relative <add value> against
+          # the directory holding nuget.config, not the working directory, so a
+          # relative feed silently retargets whenever the file is copied.
+          cat > nuget.config <<EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="local" value="${GITHUB_WORKSPACE}/artifacts" />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+            </packageSources>
+          </configuration>
+          EOF
+          cat nuget.config
+
+      - name: Library package restores and builds
+        run: |
+          dotnet new classlib -o consumer -f net10.0
+          cp nuget.config consumer/
+          cd consumer
+          dotnet add package Crucible.Extensions --version "$PKG_VERSION"
+          dotnet build -c Release
+
+      - name: Tool installs and reports its own version
+        run: |
+          dotnet tool install crucible.cli --version "$PKG_VERSION" \
+            --tool-path ./tool --add-source "${GITHUB_WORKSPACE}/artifacts"
+          reported=$(./tool/crucible --version)
+          echo "reported: $reported"
+          case "$reported" in
+            *"$PKG_VERSION"*) echo "version matches package" ;;
+            *) echo "::error::--version reported '$reported', expected $PKG_VERSION"; exit 1 ;;
+          esac
+
+      - name: Tool builds a site with each built-in theme
+        run: |
+          mkdir site && cd site
+          ../tool/crucible init
+          for theme in default modern; do
+            ../tool/crucible build -s ./docs -o "./out-$theme" -t "$theme" --title Smoke
+            pages=$(find "./out-$theme" -name '*.html' | wc -l)
+            assets=$(find "./out-$theme" \( -name '*.css' -o -name '*.js' \) | wc -l)
+            echo "$theme: $pages page(s), $assets asset(s)"
+            # Themes ship as package content; if that regresses the build either
+            # fails outright or emits pages with no stylesheet.
+            if [ "$pages" -lt 1 ] || [ "$assets" -lt 4 ]; then
+              echo "::error::$theme theme produced $pages pages / $assets assets"
+              exit 1
+            fi
+          done
+
+  publish:
+    needs: [build, package-smoke]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:

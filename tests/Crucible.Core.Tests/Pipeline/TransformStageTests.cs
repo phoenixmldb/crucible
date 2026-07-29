@@ -45,4 +45,41 @@ public class TransformStageTests
                 Directory.Delete(outputDir, recursive: true);
         }
     }
+
+    [Fact]
+    public async Task Execute_DefaultTheme_ExposesBaseUrlToScripts()
+    {
+        var sourceDir = Path.Combine(AppContext.BaseDirectory, "Fixtures", "sample-site");
+        var intermediateDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        var outputDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        var ct = TestContext.Current.CancellationToken;
+
+        try
+        {
+            var parseResult = await ParseStage.ExecuteAsync(sourceDir, intermediateDir,
+                title: "Test Site", baseUrl: "/docs/",
+                extensions: [], includeDrafts: false,
+                ct: ct);
+            parseResult.Success.Should().BeTrue();
+
+            var transformResult = await TransformStage.ExecuteAsync(
+                intermediateDir, outputDir,
+                themePath: null, extensions: [],
+                ct: ct);
+            transformResult.Success.Should().BeTrue();
+
+            var html = await File.ReadAllTextAsync(Path.Combine(outputDir, "index.html"), ct);
+
+            // search.js must resolve search-index.json against the deployed base URL,
+            // not the server root — subpath deploys (GitHub Pages) otherwise 404.
+            html.Should().Contain("window.CRUCIBLE_BASE = \"/docs/\"");
+        }
+        finally
+        {
+            if (Directory.Exists(intermediateDir))
+                Directory.Delete(intermediateDir, recursive: true);
+            if (Directory.Exists(outputDir))
+                Directory.Delete(outputDir, recursive: true);
+        }
+    }
 }
