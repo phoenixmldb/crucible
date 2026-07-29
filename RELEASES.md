@@ -31,6 +31,17 @@
   Now excludes `*.cs` and `*.md`.
 - `ThemeLoader` gives a clear error naming the missing file when pointed at a
   directory that is not a theme, instead of failing inside `File.ReadAllText`.
+- **Modern theme: code blocks rendered in a different font than inline code.**
+  `prism.css` shipped base rules for `code[class*=language-]`, whose attribute
+  selector outranked the theme's plain `code` rule — so code blocks used
+  Prism's `Consolas, Monaco, …` stack at `line-height: 1.5`, while inline code
+  used `--font-mono` at `1.6`. `prism.css` is now reduced to `.token.*` colors
+  only, leaving `style.css` the single owner of code-block typography;
+  `tab-size: 4` moved to `figure.code pre`, where the theme owns it.
+
+  **Visible change:** code blocks now render in the theme's mono font at the
+  theme's line height. No token rules were removed, so syntax colors are
+  unchanged.
 
 ### Changed
 - **Analytics is now opt-in and config-driven.** The modern theme hardcoded the
