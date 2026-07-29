@@ -147,12 +147,23 @@ jobs:
             fi
           done
 
+  # Publishes with NuGet trusted publishing: the job exchanges a GitHub OIDC
+  # token for an API key that lives one hour, instead of a long-lived secret.
+  # The previous long-lived key stopped working three months after the last
+  # release with no warning, which is the failure mode this removes.
+  #
+  # Requires a trusted publishing policy on nuget.org matching:
+  #   Repository Owner: phoenixmldb
+  #   Repository:       crucible
+  #   Workflow File:    ci.yml        <- this file's name; renaming it breaks the policy
+  #   Environment:      (empty)      <- this job uses no GitHub environment
   publish:
     needs: [build, package-smoke]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write  # required for the OIDC token exchange
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -165,9 +176,31 @@ jobs:
           dotnet-version: '10.0.x'
           dotnet-quality: 'preview'
 
+      - name: Check the nuget.org user is configured
+        env:
+          NUGET_USER: ${{ vars.NUGET_USER }}
+        run: |
+          # Not a secret — it is the public nuget.org profile name, and keeping it
+          # a repo variable means correcting it does not need a commit.
+          if [ -z "$NUGET_USER" ]; then
+            echo "::error::repository variable NUGET_USER is not set. It must be the"
+            echo "::error::nuget.org profile name the trusted publishing policy belongs"
+            echo "::error::to (a username, not an email address)."
+            exit 1
+          fi
+          echo "nuget.org user: $NUGET_USER"
+
+      # Exchanges the OIDC token for a temporary key. Keys are valid for one hour
+      # and single-use, so this runs immediately before the push.
+      - name: NuGet login (OIDC to short-lived API key)
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
       - name: Push to NuGet
         env:
-          NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
           PKG_VERSION: ${{ needs.build.outputs.version }}
         run: |
           # One package, named explicitly rather than globbed: a glob would

@@ -127,6 +127,23 @@
   The stale `crucible.extensions` versions remain listed on nuget.org; unlisting
   them is a separate manual step.
 
+### CI / publish flow
+- **Switched to NuGet trusted publishing.** The publish job now exchanges a
+  GitHub OIDC token for an API key valid for one hour, via `NuGet/login@v1`,
+  instead of the long-lived `NUGET_API_KEY` secret.
+
+  That secret stopped working roughly 90 days after the last release, with no
+  warning: every push returned `403 (The specified API key is invalid, has
+  expired, or does not have permission…)`, including for the long-existing
+  `crucible.cli`. Short-lived credentials remove key expiry as a release
+  blocker, and there is no standing secret to leak.
+
+  Requires a trusted publishing policy on nuget.org matching repository owner
+  `phoenixmldb`, repository `crucible`, workflow file `ci.yml`, no environment.
+  **Renaming this workflow file breaks the policy.** The nuget.org profile name
+  is the `NUGET_USER` repository variable — a variable rather than a secret,
+  since it is public and correcting it should not need a commit.
+
 ---
 
 ## 1.1.47 — 2026-04-28
