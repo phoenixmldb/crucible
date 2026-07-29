@@ -51,6 +51,13 @@ jobs:
         env:
           PKG_VERSION: ${{ steps.version.outputs.version }}
         run: |
+          # Crucible.Core must be packed and published too: Crucible.Extensions
+          # carries a ProjectReference to it, which becomes a hard NuGet
+          # dependency in its nuspec. Publishing Extensions without Core left
+          # every released version of crucible.extensions unrestorable
+          # (NU1101: Unable to find package Crucible.Core).
+          dotnet pack src/Crucible.Core -c Release --no-build \
+            -p:PackageVersion="$PKG_VERSION" -o ./artifacts
           dotnet pack src/Crucible.Cli -c Release --no-build \
             -p:PackageVersion="$PKG_VERSION" -o ./artifacts
           dotnet pack src/Crucible.Extensions -c Release --no-build \
