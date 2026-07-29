@@ -14,6 +14,13 @@
   var BASE = window.CRUCIBLE_BASE || "/";
   if (BASE.charAt(BASE.length - 1) !== "/") BASE += "/";
 
+  // Mirrors page.xslt's {$base-url}{@path[. != 'index']}: extensionless, and
+  // the site root collapses to the base URL. Search results must produce the
+  // same URL as the nav link and the canonical tag for a given page.
+  function pageUrl(path) {
+    return BASE + (path === "index" ? "" : path);
+  }
+
   // Load the search index on first focus
   searchInput.addEventListener("focus", loadIndex, { once: true });
 
@@ -100,7 +107,7 @@
 
       var link = document.createElement("a");
       link.className = "search-result";
-      link.href = BASE + doc.path + ".html";
+      link.href = pageUrl(doc.path);
 
       var titleDiv = document.createElement("div");
       titleDiv.className = "search-result-title";
