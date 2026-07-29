@@ -95,16 +95,20 @@ jobs:
 
       - name: Feed pointing at the freshly packed output
         run: |
-          cat > nuget.config <<'EOF'
+          # Absolute path on purpose: NuGet resolves a relative <add value> against
+          # the directory holding nuget.config, not the working directory, so a
+          # relative feed silently retargets whenever the file is copied.
+          cat > nuget.config <<EOF
           <?xml version="1.0" encoding="utf-8"?>
           <configuration>
             <packageSources>
               <clear />
-              <add key="local" value="./artifacts" />
+              <add key="local" value="${GITHUB_WORKSPACE}/artifacts" />
               <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
             </packageSources>
           </configuration>
           EOF
+          cat nuget.config
 
       - name: Library package restores and builds
         run: |
@@ -117,7 +121,7 @@ jobs:
       - name: Tool installs and reports its own version
         run: |
           dotnet tool install crucible.cli --version "$PKG_VERSION" \
-            --tool-path ./tool --add-source ./artifacts
+            --tool-path ./tool --add-source "${GITHUB_WORKSPACE}/artifacts"
           reported=$(./tool/crucible --version)
           echo "reported: $reported"
           case "$reported" in
