@@ -1,6 +1,53 @@
 # Releases
 
+CI publishes every push to `main`, and the version is `1.1.${commit_count}`, so
+there is one NuGet version per commit. Headings below therefore cover a *range*
+of published versions where a body of work landed over several commits; the
+highest version in the range is the first one containing all of it.
+
 ## Unreleased
+
+_Nothing yet._
+
+---
+
+## 1.1.63 — 2026-07-31
+
+### Fixed
+- **Generated pages added between build stages were missing from site search.**
+  `ParseStage` builds `search-index.json`; `TransformStage` only copied it. A
+  `--stage TransformOnly` run against a directory the caller had added documents
+  to after `--stage ParseOnly` — the documented extension point for generated
+  content — therefore shipped a search index that omitted them, silently and
+  with no warning.
+
+  phoenixml.dev hit this: its build parses Markdown, generates 137 API reference
+  pages into the intermediate directory, then transforms. The site had 249 pages
+  and a 112-document search index, so its entire generated API reference was
+  unsearchable.
+
+  `TransformStage` now rebuilds the index when any intermediate XML document is
+  newer than it. A `Full` build is unaffected — parse writes the index last, so
+  nothing is newer and the existing index is copied as before.
+
+### Packaging
+- **The package now carries release notes.** `PackageReleaseNotes` was never set,
+  so every `crucible.cli` version through 1.1.62 shipped with an empty
+  `<releaseNotes>` — nuget.org showed nothing about what changed. CI now extracts
+  this file's section for the version being published (`scripts/release-notes.sh`)
+  and the pack reads it in.
+
+  Fails closed on the publish path: no matching section, or an empty one, aborts
+  the pack rather than releasing without notes. Pull-request builds pack without
+  notes, since a PR's commit count is not the version it will land as.
+
+---
+
+## 1.1.48 – 1.1.62 — 2026-07-28 → 2026-07-29
+
+Published across 15 commits (`b743bda` … `e518525`). **1.1.62 is the first
+version containing all of the below**; the intermediate versions each carry only
+the work committed up to that point.
 
 ### Fixed
 - **Modern theme: ⌘ K search returned no results, ever.** `search.js` expected
@@ -158,7 +205,7 @@ Published 02:32 UTC (`86b1c3f`).
   1.1.46 by exactly those eight lines. It was intentional at the time ("only one
   site uses this theme today") but meant every site built with `-t modern`
   reported into the Endpoint Systems property. Replaced by opt-in
-  `analytics.ga4` configuration — see Unreleased.
+  `analytics.ga4` configuration in 1.1.49.
 
 ---
 

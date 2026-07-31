@@ -131,8 +131,17 @@ public static class TransformStage
         await LlmsTxtGenerator.GenerateAsync(inputDir, outputDir, siteTitle, ct)
             .ConfigureAwait(true);
 
-        // 7. Copy search index if it exists
+        // 7. Search index. ParseStage builds one, but TransformOnly runs against a
+        // directory the caller may have added documents to after parsing (the
+        // documented extension point — e.g. generated API reference pages). A
+        // parse-time index would silently omit those, so rebuild whenever any
+        // intermediate XML is newer than the index we would otherwise copy.
         var searchIndexPath = Path.Combine(inputDir, "search-index.json");
+        if (IsSearchIndexStale(inputDir, searchIndexPath))
+        {
+            await SearchIndexBuilder.BuildAsync(inputDir, ct).ConfigureAwait(false);
+        }
+
         if (File.Exists(searchIndexPath))
         {
             File.Copy(searchIndexPath, Path.Combine(outputDir, "search-index.json"), overwrite: true);
@@ -176,5 +185,35 @@ public static class TransformStage
         result.TransformTiming = timer;
 
         return result;
+    }
+
+    /// <summary>
+    /// True when the search index is missing, or when any intermediate XML document
+    /// is newer than it — meaning documents were added or changed after the index
+    /// was built and it no longer covers the site.
+    /// </summary>
+    private static bool IsSearchIndexStale(string inputDir, string searchIndexPath)
+    {
+        if (!File.Exists(searchIndexPath))
+        {
+            return true;
+        }
+
+        var indexWritten = File.GetLastWriteTimeUtc(searchIndexPath);
+
+        foreach (var xmlFile in Directory.EnumerateFiles(inputDir, "*.xml", SearchOption.AllDirectories))
+        {
+            if (string.Equals(Path.GetFileName(xmlFile), "site-manifest.xml", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (File.GetLastWriteTimeUtc(xmlFile) > indexWritten)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

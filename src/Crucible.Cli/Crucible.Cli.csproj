@@ -16,4 +16,27 @@
     <ProjectReference Include="../Crucible.Extensions/Crucible.Extensions.csproj" />
   </ItemGroup>
 
+  <!--
+    Release notes come from RELEASES.md, extracted for the version being packed
+    by scripts/release-notes.sh, which CI runs before `dotnet pack`. Reading the
+    file here rather than passing the text as -p:PackageReleaseNotes avoids
+    having to escape newlines and MSBuild's `;` list separator on the command
+    line.
+
+    Packing without the file is allowed so that local `dotnet pack` and the CI
+    smoke test still work; only the publish path is required to supply it.
+  -->
+  <Target Name="SetPackageReleaseNotes"
+          BeforeTargets="GenerateNuspec"
+          Condition="'$(PackageReleaseNotesFile)' != ''">
+    <Error Condition="!Exists('$(PackageReleaseNotesFile)')"
+           Text="PackageReleaseNotesFile was set to '$(PackageReleaseNotesFile)' but that file does not exist." />
+    <PropertyGroup>
+      <PackageReleaseNotes>$([System.IO.File]::ReadAllText('$(PackageReleaseNotesFile)'))</PackageReleaseNotes>
+      <_TrimmedReleaseNotes>$(PackageReleaseNotes.Trim())</_TrimmedReleaseNotes>
+    </PropertyGroup>
+    <Error Condition="'$(_TrimmedReleaseNotes)' == ''"
+           Text="PackageReleaseNotesFile '$(PackageReleaseNotesFile)' is empty; refusing to pack a release with no notes." />
+  </Target>
+
 </Project>

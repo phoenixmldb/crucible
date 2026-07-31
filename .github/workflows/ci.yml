@@ -48,17 +48,37 @@ jobs:
       - name: Test
         run: dotnet test Crucible.slnx -c Release --no-restore --no-build --verbosity normal
 
+      # Release notes ship with the package, so a consumer can see what changed
+      # from nuget.org. Only required on the publish path: a pull request's
+      # commit count is not the version it will land as, so RELEASES.md cannot
+      # be expected to name it, and the script fails closed on no match.
+      - name: Extract release notes
+        id: notes
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          PKG_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          notes_file="$RUNNER_TEMP/release-notes.txt"
+          ./scripts/release-notes.sh "$PKG_VERSION" > "$notes_file"
+          echo "file=$notes_file" >> "$GITHUB_OUTPUT"
+          echo "::group::Release notes for $PKG_VERSION"
+          cat "$notes_file"
+          echo "::endgroup::"
+
       # Packs on pull requests too, so package-smoke can gate a PR rather than
       # only reporting after the release is already public.
       - name: Pack
         env:
           PKG_VERSION: ${{ steps.version.outputs.version }}
+          NOTES_FILE: ${{ steps.notes.outputs.file }}
         run: |
           # crucible.cli is the only published package. Crucible.Core and
           # Crucible.Extensions are IsPackable=false — they ship inside the tool,
           # which PackAsTool builds from the full publish output.
           dotnet pack src/Crucible.Cli -c Release --no-build \
-            -p:PackageVersion="$PKG_VERSION" -o ./artifacts
+            -p:PackageVersion="$PKG_VERSION" \
+            ${NOTES_FILE:+-p:PackageReleaseNotesFile="$NOTES_FILE"} \
+            -o ./artifacts
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
