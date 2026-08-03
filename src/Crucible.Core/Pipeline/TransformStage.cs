@@ -128,7 +128,7 @@ public static class TransformStage
         }
 
         // 6. Generate llms.txt and llms-full.txt
-        await LlmsTxtGenerator.GenerateAsync(inputDir, outputDir, siteTitle, ct)
+        await LlmsTxtGenerator.GenerateAsync(inputDir, outputDir, siteTitle, result.Warnings, ct)
             .ConfigureAwait(true);
 
         // 7. Search index. ParseStage builds one, but TransformOnly runs against a
@@ -139,7 +139,7 @@ public static class TransformStage
         var searchIndexPath = Path.Combine(inputDir, "search-index.json");
         if (IsSearchIndexStale(inputDir, searchIndexPath))
         {
-            await SearchIndexBuilder.BuildAsync(inputDir, ct).ConfigureAwait(false);
+            await SearchIndexBuilder.BuildAsync(inputDir, result.Warnings, ct).ConfigureAwait(false);
         }
 
         if (File.Exists(searchIndexPath))

@@ -4,6 +4,7 @@ namespace Crucible.Core.Search;
 
 using System.Globalization;
 using System.Text;
+using System.Xml;
 using System.Xml.Linq;
 
 /// <summary>
@@ -16,9 +17,20 @@ public static class LlmsTxtGenerator
     /// <summary>
     /// Generates llms.txt and llms-full.txt from intermediate XML documents.
     /// </summary>
+    /// <param name="xmlDirectory">Directory of intermediate document XML.</param>
+    /// <param name="outputDirectory">Where llms.txt and llms-full.txt are written.</param>
+    /// <param name="siteTitle">Site title, used as the heading.</param>
+    /// <param name="warnings">
+    /// Receives one entry per document that could not be included. Omitting a page from the
+    /// generated corpus without saying so leaves no way to tell an incomplete llms.txt from
+    /// a complete one.
+    /// </param>
+    /// <param name="ct">Cancels the generation.</param>
     public static async Task GenerateAsync(string xmlDirectory, string outputDirectory,
-        string siteTitle, CancellationToken ct = default)
+        string siteTitle, ICollection<string> warnings, CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(warnings);
+
         var manifestPath = Path.Combine(xmlDirectory, "site-manifest.xml");
         if (!File.Exists(manifestPath))
             return;
@@ -53,9 +65,11 @@ public static class LlmsTxtGenerator
 
                 documents.Add((path, title, description, body));
             }
-#pragma warning disable CA1031
-            catch { /* skip malformed files */ }
-#pragma warning restore CA1031
+            catch (Exception ex) when (ex is XmlException or IOException or UnauthorizedAccessException)
+            {
+                warnings.Add(
+                    $"llms.txt: skipped {System.IO.Path.GetRelativePath(xmlDirectory, xmlFile)} — {ex.Message}");
+            }
         }
 
         // Sort by path for consistent output

@@ -106,7 +106,7 @@ public static class ParseStage
         await Task.Run(() => manifestXml.Save(manifestPath), ct).ConfigureAwait(false);
 
         // 9. Build search index from the emitted XML
-        await SearchIndexBuilder.BuildAsync(outputDir, ct).ConfigureAwait(false);
+        await SearchIndexBuilder.BuildAsync(outputDir, result.Warnings, ct).ConfigureAwait(false);
 
         timer.Stop();
         result.ParseTiming = timer;
