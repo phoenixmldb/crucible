@@ -1,6 +1,7 @@
 namespace Crucible.Core.Pipeline;
 
 using System.Diagnostics;
+using System.Text.Json;
 using System.Xml.Linq;
 using Crucible.Core.Extensions;
 using Crucible.Core.Models;
@@ -134,8 +135,9 @@ public static class TransformStage
         // 7. Search index. ParseStage builds one, but TransformOnly runs against a
         // directory the caller may have added documents to after parsing (the
         // documented extension point — e.g. generated API reference pages). A
-        // parse-time index would silently omit those, so rebuild whenever any
-        // intermediate XML is newer than the index we would otherwise copy.
+        // parse-time index would silently omit those, so rebuild whenever the index
+        // no longer covers what is on disk — see IsSearchIndexStale for why that is
+        // a coverage question rather than a timestamp one.
         var searchIndexPath = Path.Combine(inputDir, "search-index.json");
         if (IsSearchIndexStale(inputDir, searchIndexPath))
         {
@@ -188,10 +190,24 @@ public static class TransformStage
     }
 
     /// <summary>
-    /// True when the search index is missing, or when any intermediate XML document
-    /// is newer than it — meaning documents were added or changed after the index
-    /// was built and it no longer covers the site.
+    /// True when the search index does not cover the documents currently on disk.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Coverage is checked by count before it is checked by time, because modification
+    /// times answer the wrong question. A document injected after parsing — the documented
+    /// extension point, e.g. generated API reference pages — can easily land inside the
+    /// index's timestamp granularity, and a file copied in with its time preserved is
+    /// <i>older</i> than the index that predates it. Both cases ship an index missing real
+    /// pages, and neither is visible to a comparison of write times.
+    /// </para>
+    /// <para>
+    /// Ties count as stale. Rebuilding unnecessarily costs one pass over already-parsed
+    /// XML; failing to rebuild ships a site whose search cannot find pages that are on it.
+    /// The same bias explains why an unreadable index is treated as stale rather than
+    /// trusted.
+    /// </para>
+    /// </remarks>
     private static bool IsSearchIndexStale(string inputDir, string searchIndexPath)
     {
         if (!File.Exists(searchIndexPath))
@@ -199,21 +215,37 @@ public static class TransformStage
             return true;
         }
 
-        var indexWritten = File.GetLastWriteTimeUtc(searchIndexPath);
+        var documents = Directory.EnumerateFiles(inputDir, "*.xml", SearchOption.AllDirectories)
+            .Where(f => !string.Equals(Path.GetFileName(f), "site-manifest.xml",
+                StringComparison.OrdinalIgnoreCase))
+            .ToList();
 
-        foreach (var xmlFile in Directory.EnumerateFiles(inputDir, "*.xml", SearchOption.AllDirectories))
+        if (CountIndexedDocuments(searchIndexPath) != documents.Count)
         {
-            if (string.Equals(Path.GetFileName(xmlFile), "site-manifest.xml", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            if (File.GetLastWriteTimeUtc(xmlFile) > indexWritten)
-            {
-                return true;
-            }
+            return true;
         }
 
-        return false;
+        var indexWritten = File.GetLastWriteTimeUtc(searchIndexPath);
+        return documents.Exists(f => File.GetLastWriteTimeUtc(f) >= indexWritten);
+    }
+
+    /// <summary>
+    /// Number of entries in an existing index, or -1 if it cannot be read — which forces
+    /// a rebuild rather than trusting a file we could not parse.
+    /// </summary>
+    private static int CountIndexedDocuments(string searchIndexPath)
+    {
+        try
+        {
+            using var stream = File.OpenRead(searchIndexPath);
+            using var json = JsonDocument.Parse(stream);
+            return json.RootElement.ValueKind == JsonValueKind.Array
+                ? json.RootElement.GetArrayLength()
+                : -1;
+        }
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
+        {
+            return -1;
+        }
     }
 }
