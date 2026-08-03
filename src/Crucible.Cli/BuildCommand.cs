@@ -178,7 +178,7 @@ internal static class BuildCommand
               --clean                Delete output directory before building
               --include-drafts       Include draft documents
               --strict               Treat warnings as errors
-              --verbose              Verbose output
+              --verbose              Verbose output; keeps the intermediate directory
               --timing               Print stage timing
               -h, --help             Show this help
             """);

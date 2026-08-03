@@ -64,7 +64,7 @@ public sealed class StrictModeTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private async Task<BuildResult> BuildAsync(bool strict)
+    private async Task<BuildResult> BuildAsync(bool strict, bool verbose = false)
     {
         var config = new CrucibleConfig
         {
@@ -74,7 +74,8 @@ public sealed class StrictModeTests : IDisposable
             BaseUrl = "/",
         };
 
-        var pipeline = new BuildPipeline(config, [], new BuildOptions { Strict = strict });
+        var pipeline = new BuildPipeline(config, [],
+            new BuildOptions { Strict = strict, Verbose = verbose });
         return await pipeline.ExecuteAsync(TestContext.Current.CancellationToken)
             .ConfigureAwait(false);
     }
@@ -124,5 +125,44 @@ public sealed class StrictModeTests : IDisposable
             .Which.Should().Contain("wip.md",
                 "not escalating it is not the same as hiding it");
         result.Warnings.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Verbose_ReportsTheIntermediateDirectory()
+    {
+        WriteDraftAndHealthyPage();
+
+        var result = await BuildAsync(strict: false, verbose: true);
+
+        // A full build parses into a temp directory named with a GUID and deletes it
+        // afterwards. Without --verbose there is no way to learn where that was, which
+        // makes "the HTML is wrong" impossible to inspect.
+        result.Messages.Should().Contain(m => m.Contains("Intermediate:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Verbose_KeepsTheIntermediateDirectoryItReported()
+    {
+        WriteDraftAndHealthyPage();
+
+        var result = await BuildAsync(strict: false, verbose: true);
+
+        // Naming a directory that was deleted on the way out is not diagnostics. If
+        // --verbose reports the path, the path has to still be there.
+        var line = result.Messages.Single(m => m.Contains("Intermediate:", StringComparison.Ordinal));
+        var path = line["Intermediate: ".Length..].Split(" (")[0];
+
+        Directory.Exists(path).Should().BeTrue();
+        Directory.Delete(path, recursive: true);
+    }
+
+    [Fact]
+    public async Task WithoutVerbose_TheIntermediateDirectoryIsNotReported()
+    {
+        WriteDraftAndHealthyPage();
+
+        var result = await BuildAsync(strict: false, verbose: false);
+
+        result.Messages.Should().NotContain(m => m.Contains("Intermediate:", StringComparison.Ordinal));
     }
 }

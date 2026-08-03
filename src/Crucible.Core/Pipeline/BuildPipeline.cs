@@ -25,6 +25,12 @@ public sealed class BuildPipeline
         var result = new BuildResult();
         var inputType = InputDetector.Detect(_config.Source);
 
+        if (_options.Verbose)
+        {
+            result.Messages.Add($"Input: {_config.Source} (detected as {inputType})");
+            result.Messages.Add($"Output: {_config.Output}");
+        }
+
         if (_options.Clean && Directory.Exists(_config.Output))
             Directory.Delete(_config.Output, recursive: true);
 
@@ -35,6 +41,13 @@ public sealed class BuildPipeline
             var parseOutput = _options.Stage == BuildStage.ParseOnly
                 ? _config.Output
                 : Path.Combine(Path.GetTempPath(), $"crucible-{Guid.NewGuid()}");
+
+            // A full build parses into a GUID-named temp directory and deletes it on the
+            // way out, so there is otherwise no way to inspect the intermediate XML that
+            // produced a wrong-looking page. Under --verbose the directory is reported and
+            // kept — naming a path that was then deleted would not be diagnostics.
+            if (_options.Verbose)
+                result.Messages.Add($"Intermediate: {parseOutput} (kept for inspection)");
 
             var parseResult = await ParseStage.ExecuteAsync(
                 _config.Source, parseOutput,
@@ -60,9 +73,12 @@ public sealed class BuildPipeline
             transformSw.Stop();
             result.TransformTiming = transformSw;
 
-            // Clean up temp intermediate dir
-            try { Directory.Delete(parseOutput, recursive: true); }
-            catch (IOException) { /* best effort */ }
+            // Clean up temp intermediate dir, unless --verbose promised to keep it.
+            if (!_options.Verbose)
+            {
+                try { Directory.Delete(parseOutput, recursive: true); }
+                catch (IOException) { /* best effort */ }
+            }
         }
         else if (inputType == InputType.XmlIntermediate)
         {
