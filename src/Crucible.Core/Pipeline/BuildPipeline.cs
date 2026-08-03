@@ -47,7 +47,7 @@ public sealed class BuildPipeline
             result.ParseTiming = parseSw;
 
             if (!result.Success || _options.Stage == BuildStage.ParseOnly)
-                return result;
+                return Finish(result);
 
             var transformSw = Stopwatch.StartNew();
             var transformResult = await TransformStage.ExecuteAsync(
@@ -74,7 +74,22 @@ public sealed class BuildPipeline
             result.TransformTiming = transformSw;
         }
 
-        return result;
+        return Finish(result);
+
+        // --strict is advertised as "treat warnings as errors". The flag was previously
+        // parsed, stored on BuildOptions and never read, so a CI pipeline passing it got a
+        // green build no matter what was reported. The warnings stay in the collection so
+        // they still print; the added error is what makes Success false.
+        BuildResult Finish(BuildResult r)
+        {
+            if (_options.Strict && r.Warnings.Count > 0)
+            {
+                r.Errors.Add(
+                    $"{r.Warnings.Count} warning(s) treated as errors because --strict was specified.");
+            }
+
+            return r;
+        }
     }
 }
 
