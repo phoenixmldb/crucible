@@ -55,7 +55,7 @@ public static class ParseStage
 
             if (metadata.Draft && !includeDrafts)
             {
-                result.Warnings.Add($"Skipping draft: {Path.GetRelativePath(sourceDir, file)}");
+                result.Messages.Add($"Skipping draft: {Path.GetRelativePath(sourceDir, file)}");
                 continue;
             }
 

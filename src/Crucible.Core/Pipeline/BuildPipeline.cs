@@ -43,6 +43,7 @@ public sealed class BuildPipeline
 
             result.Errors.AddRange(parseResult.Errors);
             result.Warnings.AddRange(parseResult.Warnings);
+            result.Messages.AddRange(parseResult.Messages);
             parseSw.Stop();
             result.ParseTiming = parseSw;
 
@@ -55,6 +56,7 @@ public sealed class BuildPipeline
                 _config.Analytics, ct).ConfigureAwait(true);
             result.Errors.AddRange(transformResult.Errors);
             result.Warnings.AddRange(transformResult.Warnings);
+            result.Messages.AddRange(transformResult.Messages);
             transformSw.Stop();
             result.TransformTiming = transformSw;
 
@@ -70,6 +72,7 @@ public sealed class BuildPipeline
                 _config.Analytics, ct).ConfigureAwait(true);
             result.Errors.AddRange(transformResult.Errors);
             result.Warnings.AddRange(transformResult.Warnings);
+            result.Messages.AddRange(transformResult.Messages);
             transformSw.Stop();
             result.TransformTiming = transformSw;
         }

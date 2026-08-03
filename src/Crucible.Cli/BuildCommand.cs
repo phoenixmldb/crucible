@@ -67,6 +67,13 @@ internal static class BuildCommand
         var pipeline = new BuildPipeline(config, extensions, buildOptions);
         var result = await pipeline.ExecuteAsync().ConfigureAwait(true);
 
+        // Print informational messages to stderr. These are things the build did on
+        // purpose — not defects — so they are reported but never escalated by --strict.
+        foreach (var message in result.Messages)
+        {
+            await Console.Error.WriteLineAsync($"info: {message}").ConfigureAwait(true);
+        }
+
         // Print warnings to stderr
         foreach (var warning in result.Warnings)
         {
