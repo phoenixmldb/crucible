@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    A plugin shaped like a real one: it implements the extension contract from
+    Crucible.Core AND has a dependency of its own. Its published output therefore
+    contains a copy of Crucible.Core.dll, which is deliberate — a loader that resolves
+    the contract assembly from the plugin folder instead of the default context ends up
+    with two different Types of the same name, and silently skips every plugin.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <AnalysisLevel>none</AnalysisLevel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../SamplePlugin.Support/SamplePlugin.Support.csproj" />
+    <ProjectReference Include="../../../src/Crucible.Core/Crucible.Core.csproj" />
+  </ItemGroup>
+
+</Project>

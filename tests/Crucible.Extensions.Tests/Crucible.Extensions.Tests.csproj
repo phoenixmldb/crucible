@@ -16,6 +16,31 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Crucible.Core/Crucible.Core.csproj" />
     <ProjectReference Include="../../src/Crucible.Extensions/Crucible.Extensions.csproj" />
+
+    <!--
+      Built, but deliberately NOT referenced: the sample plugin must not land in this
+      project's own output, or the default load context would resolve its dependency and
+      the plugin-loading test would pass without the loader doing anything.
+    -->
+    <ProjectReference Include="../fixtures/SamplePlugin/SamplePlugin.csproj"
+                      ReferenceOutputAssembly="false" Private="false" />
   </ItemGroup>
+
+  <!--
+    Copy the sample plugin into a subfolder of the test output. The default context probes
+    the app base directory, not its subdirectories, so SamplePlugin.Support is reachable
+    only if the plugin loader resolves it.
+  -->
+  <Target Name="StageSamplePlugin" AfterTargets="Build">
+    <ItemGroup>
+      <SamplePluginOutput Include="$(MSBuildThisFileDirectory)../fixtures/SamplePlugin/bin/$(Configuration)/$(TargetFramework)/*.dll" />
+      <SamplePluginOutput Include="$(MSBuildThisFileDirectory)../fixtures/SamplePlugin/bin/$(Configuration)/$(TargetFramework)/*.deps.json" />
+    </ItemGroup>
+    <Error Condition="'@(SamplePluginOutput)' == ''"
+           Text="Sample plugin output not found — the plugin-loading test would silently pass with nothing to load." />
+    <Copy SourceFiles="@(SamplePluginOutput)"
+          DestinationFolder="$(OutDir)test-plugin"
+          SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>
