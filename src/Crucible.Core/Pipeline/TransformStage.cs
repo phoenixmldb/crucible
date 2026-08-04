@@ -75,7 +75,7 @@ public static class TransformStage
         // entries in SecondaryResultDocuments across pages, so if that is ever
         // supported this must go back to one transformer per page.
         var pageTransformer = new XsltTransformer();
-        await pageTransformer.LoadStylesheetAsync(theme.PageXslt, pageXsltBaseUri).ConfigureAwait(true);
+        await pageTransformer.LoadStylesheetAsync(theme.PageXslt, pageXsltBaseUri).ConfigureAwait(false);
 
         foreach (var xmlFile in pageFiles)
         {
@@ -95,8 +95,8 @@ public static class TransformStage
                 transformer.SetParameter("current-path", currentPath);
                 transformer.SetParameter("ga4-id", analytics?.Ga4 ?? "");
 
-                var documentXml = await File.ReadAllTextAsync(xmlFile, ct).ConfigureAwait(true);
-                var html = await transformer.TransformAsync(documentXml, ct).ConfigureAwait(true);
+                var documentXml = await File.ReadAllTextAsync(xmlFile, ct).ConfigureAwait(false);
+                var html = await transformer.TransformAsync(documentXml, ct).ConfigureAwait(false);
 
                 var outputFileDir = Path.GetDirectoryName(outputPath);
                 if (outputFileDir != null)
@@ -104,7 +104,7 @@ public static class TransformStage
                     Directory.CreateDirectory(outputFileDir);
                 }
 
-                await File.WriteAllTextAsync(outputPath, html, ct).ConfigureAwait(true);
+                await File.WriteAllTextAsync(outputPath, html, ct).ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -116,12 +116,12 @@ public static class TransformStage
         try
         {
             var sitemapTransformer = new XsltTransformer();
-            await sitemapTransformer.LoadStylesheetAsync(theme.SitemapXslt, sitemapXsltBaseUri).ConfigureAwait(true);
+            await sitemapTransformer.LoadStylesheetAsync(theme.SitemapXslt, sitemapXsltBaseUri).ConfigureAwait(false);
 
-            var manifestXml = await File.ReadAllTextAsync(manifestPath, ct).ConfigureAwait(true);
-            var sitemapXml = await sitemapTransformer.TransformAsync(manifestXml, ct).ConfigureAwait(true);
+            var manifestXml = await File.ReadAllTextAsync(manifestPath, ct).ConfigureAwait(false);
+            var sitemapXml = await sitemapTransformer.TransformAsync(manifestXml, ct).ConfigureAwait(false);
 
-            await File.WriteAllTextAsync(Path.Combine(outputDir, "sitemap.xml"), sitemapXml, ct).ConfigureAwait(true);
+            await File.WriteAllTextAsync(Path.Combine(outputDir, "sitemap.xml"), sitemapXml, ct).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -130,7 +130,7 @@ public static class TransformStage
 
         // 6. Generate llms.txt and llms-full.txt
         await LlmsTxtGenerator.GenerateAsync(inputDir, outputDir, siteTitle, result.Warnings, ct)
-            .ConfigureAwait(true);
+            .ConfigureAwait(false);
 
         // 7. Search index. ParseStage builds one, but TransformOnly runs against a
         // directory the caller may have added documents to after parsing (the
@@ -179,7 +179,7 @@ public static class TransformStage
                     Directory.CreateDirectory(destDir);
                 }
 
-                await File.WriteAllBytesAsync(destPath, asset.Content.ToArray(), ct).ConfigureAwait(true);
+                await File.WriteAllBytesAsync(destPath, asset.Content.ToArray(), ct).ConfigureAwait(false);
             }
         }
 
