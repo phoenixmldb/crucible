@@ -13,7 +13,7 @@ public class FrontmatterParserTests
     public void Parse_FullFrontmatter_ExtractsAllFields()
     {
         var (metadata, markdown) = FrontmatterParser.Parse(
-            File.ReadAllText(FixturePath("simple-page.md")));
+            File.ReadAllText(FixturePath("simple-page.md")), "simple-page.md");
 
         metadata.Should().NotBeNull();
         metadata!.Title.Should().Be("Installation");
@@ -28,7 +28,7 @@ public class FrontmatterParserTests
     public void Parse_MinimalFrontmatter_DefaultsOptionalFields()
     {
         var (metadata, markdown) = FrontmatterParser.Parse(
-            File.ReadAllText(FixturePath("minimal-frontmatter.md")));
+            File.ReadAllText(FixturePath("minimal-frontmatter.md")), "minimal-frontmatter.md");
 
         metadata.Should().NotBeNull();
         metadata!.Title.Should().Be("Minimal Page");
@@ -42,7 +42,7 @@ public class FrontmatterParserTests
     public void Parse_NoFrontmatter_ReturnsNull()
     {
         var (metadata, markdown) = FrontmatterParser.Parse(
-            File.ReadAllText(FixturePath("no-frontmatter.md")));
+            File.ReadAllText(FixturePath("no-frontmatter.md")), "no-frontmatter.md");
 
         metadata.Should().BeNull();
         markdown.Should().Contain("# No Frontmatter");

@@ -39,7 +39,21 @@ public static class ParseStage
             ct.ThrowIfCancellationRequested();
 
             var content = await File.ReadAllTextAsync(file, ct).ConfigureAwait(false);
-            var (metadata, markdown) = FrontmatterParser.Parse(content);
+
+            DocumentMetadata? metadata;
+            string markdown;
+            try
+            {
+                (metadata, markdown) = FrontmatterParser.Parse(
+                    content, Path.GetRelativePath(sourceDir, file));
+            }
+            catch (FrontmatterException ex)
+            {
+                // One unparseable document is a build error, not an unattributed stack
+                // trace that takes down the whole run.
+                result.Errors.Add(ex.Message);
+                continue;
+            }
 
             if (metadata == null)
             {

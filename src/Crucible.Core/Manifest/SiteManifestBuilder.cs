@@ -59,7 +59,10 @@ public static class SiteManifestBuilder
             }
 
             var content = File.ReadAllText(file);
-            var (metadata, _) = FrontmatterParser.Parse(content);
+            // A malformed document is reported by ParseStage, which is the authority on
+            // build errors. Here it simply has no usable metadata and falls back to a
+            // filename-derived title, so one bad file cannot take the manifest down too.
+            var metadata = TryParseMetadata(content, file);
             var relativePath = GetRelativePath(file, rootDir);
 
             children.Add(new SitePage
@@ -93,7 +96,7 @@ public static class SiteManifestBuilder
                 sectionIndexPath = GetRelativePath(indexFile, rootDir);
 
                 var content = File.ReadAllText(indexFile);
-                var (metadata, _) = FrontmatterParser.Parse(content);
+                var metadata = TryParseMetadata(content, indexFile);
                 if (metadata != null && !string.IsNullOrEmpty(metadata.Title))
                 {
                     sectionTitle = metadata.Title;
@@ -210,5 +213,20 @@ public static class SiteManifestBuilder
         }
 
         return pageElement;
+    }
+
+    /// <summary>
+    /// Metadata for a document, or null when its frontmatter cannot be parsed.
+    /// </summary>
+    private static DocumentMetadata? TryParseMetadata(string content, string path)
+    {
+        try
+        {
+            return FrontmatterParser.Parse(content, path).Metadata;
+        }
+        catch (FrontmatterException)
+        {
+            return null;
+        }
     }
 }
