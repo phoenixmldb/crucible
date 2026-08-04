@@ -11,6 +11,97 @@ _Nothing yet._
 
 ---
 
+## 1.1.64 – 1.1.72 — 2026-08-03
+
+A pass over the findings from the 2026-08-01 code review. Several of these change
+what a build *reports*, and three can fail a build that previously passed — see
+"Behaviour changes" below before upgrading a pipeline.
+
+### Fixed
+
+- **Documents that failed to parse were dropped from search and `llms.txt` with no
+  warning.** Both generators caught every exception per document and skipped the
+  file silently. The failure reached users as a search box that could not find
+  pages visibly present on the site, with nothing in the build output to explain
+  it. Both now report the file and the reason, and the bare `catch` narrows to the
+  exception types actually expected, so anything else surfaces instead of being
+  mistaken for a malformed file.
+
+  Also covers the non-throwing path: a well-formed file whose root element was not
+  `<document>` was dropped by a bare `continue`, producing the identical symptom
+  without an exception ever being raised.
+
+- **The 1.1.63 search-index fix was incomplete.** It decided staleness by comparing
+  modification times with a strict `>`, which misses two cases that both ship an
+  index short of real pages: a document injected inside the index's timestamp
+  granularity *ties* rather than exceeding, and a file copied in with its
+  modification time preserved is *older* than the index that predates it. The
+  second is the likelier one in practice, since injecting generated pages is the
+  documented extension point and copying them is the obvious way to do it.
+
+  Staleness is now a coverage question — documents on disk against entries in the
+  index — with the time comparison kept for content changes that leave the count
+  unchanged, and ties counted as stale.
+
+- **Plugins with dependencies loaded and then failed on first use.** The loader
+  used a bare `AssemblyLoadContext` with no dependency resolution, so any plugin
+  with a dependency threw `FileNotFoundException` at the first call into it, deep
+  enough to obscure the cause. Resolution now runs through the plugin's
+  `.deps.json`, which means **a plugin is a published output folder, not a loose
+  `.dll`**.
+
+- **Malformed frontmatter failed the build without naming the file.** A raw
+  `YamlException` reported a line number inside the frontmatter block and nothing
+  about which document it came from. Errors now carry the document path and a
+  document-relative line, with the original diagnostic kept as the inner
+  exception, and one bad file is a build error rather than an unattributed stack
+  trace that takes the run down.
+
+- **`--strict` did nothing.** It was parsed, stored, and read by nothing, while
+  `--help` advertised "Treat warnings as errors" — so a CI pipeline passing it got
+  a green build no matter what was reported.
+
+- **`--verbose` did nothing.** Same shape. It now reports the input directory and
+  the type it was detected as, the output directory, and the intermediate
+  directory.
+
+- **Library code resumed on the caller's synchronization context.**
+  `Crucible.Core` used `ConfigureAwait(true)` throughout. Harmless under the CLI
+  and ASP.NET Core, neither of which installs a context, but a responsiveness and
+  deadlock hazard the first time the library is embedded in WPF, WinForms, or
+  MAUI.
+
+### Behaviour changes
+
+- **`--strict` now fails builds.** This is the point of the fix, but a pipeline
+  that has been passing `--strict` and going green may start failing. The warnings
+  it escalates were always being printed.
+
+- **A malformed closing delimiter is now "missing frontmatter" rather than a
+  mangled page.** The terminator was previously any line *starting* with `---`, so
+  a `----` rule or a typo ended the block early and leaked the remainder into the
+  rendered body. It must now be a line that is exactly `---`, ignoring trailing
+  whitespace. Documents relying on the old behaviour will now report an error
+  instead of rendering incorrectly.
+
+- **A skipped draft is information, not a warning.** It moved to a new `Messages`
+  channel, printed as `info:` and never escalated by `--strict`, because a draft is
+  the author's intent rather than a defect — escalating it would make `--strict`
+  unusable on any site with work in progress. Anything parsing build output for
+  `warning:` lines will no longer see drafts there.
+
+- **`--verbose` keeps the intermediate directory.** A full build parses into a
+  temporary directory and deletes it on the way out, so reporting that path and
+  then removing it would not have been diagnostics. Under `--verbose` the
+  directory is left in place for inspection, and is not cleaned up afterwards.
+
+- **Plugin load contexts are no longer collectible.** They never were unloaded, so
+  the flag cost indirection and reduced JIT optimization for a capability nothing
+  used. No effect unless a host was relying on plugin assemblies being
+  collectible, which nothing in-tree was.
+
+---
+
 ## 1.1.63 — 2026-07-31
 
 ### Fixed
