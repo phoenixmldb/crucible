@@ -5,5 +5,13 @@
   <Folder Name="/tests/">
     <Project Path="tests/Crucible.Core.Tests/Crucible.Core.Tests.csproj" />
     <Project Path="tests/Crucible.Extensions.Tests/Crucible.Extensions.Tests.csproj" />
+    <!--
+      Fixtures for the plugin-loading test, not test projects themselves. They must be
+      in the solution: a ProjectReference to a project outside it does not inherit the
+      solution's configuration, so under `-c Release` they would build as Debug and the
+      staging step would look for output that is not there.
+    -->
+    <Project Path="tests/fixtures/SamplePlugin/SamplePlugin.csproj" />
+    <Project Path="tests/fixtures/SamplePlugin.Support/SamplePlugin.Support.csproj" />
   </Folder>
 </Solution>

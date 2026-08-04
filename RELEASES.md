@@ -11,7 +11,7 @@ _Nothing yet._
 
 ---
 
-## 1.1.64 – 1.1.72 — 2026-08-03
+## 1.1.64 – 1.1.73 — 2026-08-03
 
 A pass over the findings from the 2026-08-01 code review. Several of these change
 what a build *reports*, and three can fail a build that previously passed — see
