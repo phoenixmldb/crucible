@@ -11,10 +11,14 @@ _Nothing yet._
 
 ---
 
-## 1.1.74 — 2026-09-01
+## 1.1.74 – 1.1.76 — 2026-09-01
 
 Takes `PhoenixmlDb.Xslt` from **1.5.0** to **1.6.13**. No Crucible source changed;
 the engine did.
+
+The heading names a range because the version is the commit count: the commit that
+writes these notes changes the version the notes have to name, so the range covers
+the pin bump, the notes, and the correction.
 
 The pin was eight minor releases behind. Crucible transforms every page of
 phoenixml.dev through this engine, so it is one of the two real-world consumers
