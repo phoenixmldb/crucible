@@ -11,6 +11,36 @@ _Nothing yet._
 
 ---
 
+## 1.1.74 — 2026-09-01
+
+Takes `PhoenixmlDb.Xslt` from **1.5.0** to **1.6.13**. No Crucible source changed;
+the engine did.
+
+The pin was eight minor releases behind. Crucible transforms every page of
+phoenixml.dev through this engine, so it is one of the two real-world consumers
+that exercise it outside its own test suite — and it was doing that against an
+engine from several release trains ago.
+
+1.6.13 carries eleven fixes found by running XSpec's 284-suite corpus against the
+engine. Two of them are ones a documentation pipeline is directly exposed to:
+
+- **`xsl:attribute` with a sequence-constructor body escaped its content twice.**
+  An attribute built that way containing `&`, `<` or `>` came out wrong while
+  staying well-formed, so nothing errored and the damage was only visible when
+  something read the value back.
+- **A forward-declared global with a namespaced name was evaluated before its
+  dependencies.** Node kinds then collapsed: `comment()` and `element()` read as
+  documents, `attribute()` as an empty string. Module-structured stylesheets with
+  namespaced globals — which describes Crucible's — are exactly the shape that
+  hits this.
+
+Also in the engine: unbounded `xs:integer`, correct `namespace-node()` matching,
+and named `processing-instruction(target)` types binding the right node kind.
+
+    Crucible.Core.Tests 126 passed, Crucible.Extensions.Tests 8 passed, 0 failed
+
+---
+
 ## 1.1.64 – 1.1.73 — 2026-08-03
 
 A pass over the findings from the 2026-08-01 code review. Several of these change
