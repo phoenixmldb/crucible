@@ -3,7 +3,16 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <!-- PhoenixmlDb -->
+    <!-- PhoenixmlDb. check-pins: train-locked — must equal the release version at pack time.
+         crucible.cli EMBEDS this engine (PackAsTool ships the full publish output) and crucible
+         builds phoenixml.dev, so this pin decides which engine renders our own documentation.
+
+         It sat at 1.6.13 — the one version recorded as known-bad, which ships depending on
+         XQuery 1.6.12 (phoenixmldb-xslt docs/RELEASE-HYGIENE.md, Tier 1) — and nothing noticed,
+         because this repo had no pin check of any kind. It has two now: check-pins.sh catches a
+         pin behind what is published, check-release-train.sh catches one behind the train being
+         released. Bumping it is train work and is deliberately not done in the same change that
+         adds the checks. -->
     <PackageVersion Include="PhoenixmlDb.Xslt" Version="1.6.13" />
     <!-- Markdown/YAML -->
     <PackageVersion Include="Markdig" Version="1.3.2" />

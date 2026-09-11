@@ -3,6 +3,10 @@ name: CI
 on:
   push:
     branches: [main]
+    # Releases are tagged, not merged. Publishing used to run on every push to main, which is
+    # why crucible.cli's version was literally a commit count — 1.1.76 meant 76 commits. The
+    # published history was a merge log rather than a record of decisions.
+    tags: ["v*"]
   pull_request:
     branches: [main]
 
@@ -32,10 +36,27 @@ jobs:
       - name: Determine version
         id: version
         run: |
-          COMMIT_COUNT=$(git rev-list --count HEAD)
-          VERSION="1.1.${COMMIT_COUNT}"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            # A release. The tag is the version, so it is a decision someone made.
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            # Not a release. Still needs a version so Pack can run and package-smoke can gate a
+            # PR, but this is never published — see the tag-only conditions below.
+            COMMIT_COUNT=$(git rev-list --count HEAD)
+            VERSION="1.1.${COMMIT_COUNT}"
+          fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "Version: ${VERSION}"
+          echo "Version: ${VERSION} (ref ${GITHUB_REF_NAME}, type ${GITHUB_REF_TYPE})"
+
+      # This repo had no pin check of any kind, which is how PhoenixmlDb.Xslt sat at 1.6.13 —
+      # the known-bad version — while crucible built phoenixml.dev. Two checks now: stale
+      # against what is published, and equal to the train being released.
+      - name: Engine pins are not stale
+        run: ./scripts/check-pins.sh
+
+      - name: Engine pins match this release train
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: ./scripts/check-release-train.sh "${{ steps.version.outputs.version }}"
 
       - name: Restore
         run: dotnet restore Crucible.slnx
@@ -54,7 +75,7 @@ jobs:
       # be expected to name it, and the script fails closed on no match.
       - name: Extract release notes
         id: notes
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: startsWith(github.ref, 'refs/tags/v')
         env:
           PKG_VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -179,7 +200,7 @@ jobs:
   #   Environment:      (empty)      <- this job uses no GitHub environment
   publish:
     needs: [build, package-smoke]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: read
