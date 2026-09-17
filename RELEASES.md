@@ -1,13 +1,68 @@
 # Releases
 
-CI publishes every push to `main`, and the version is `1.1.${commit_count}`, so
-there is one NuGet version per commit. Headings below therefore cover a *range*
-of published versions where a body of work landed over several commits; the
-highest version in the range is the first one containing all of it.
+Releases are **tagged**, and the tag is the version. Pushing `v<version>` packs and
+publishes `crucible.cli`; pushes to `main` build and test but never publish.
 
-## Unreleased
+Headings below 1.1.76 cover a *range*, because until 77a49e9 CI published every
+push to `main` with the version set to `1.1.${commit_count}` — one NuGet version
+per commit, so the published history was a merge log rather than a record of
+decisions. Those ranges are kept as-is; the highest version in a range is the
+first one containing all of the work described.
 
-_Nothing yet._
+## 1.2.0 — 2026-09-17
+
+**Takes `PhoenixmlDb.Xslt` from 1.6.13 to 2.1.0.** No Crucible source changed; the engine did.
+
+Minor rather than patch because `crucible.cli` **embeds** the engine — `PackAsTool` ships the
+full publish output — so the engine's breaking change is a breaking change for any stylesheet
+this tool renders.
+
+### Why this release matters more than a version bump
+
+The published `crucible.cli 1.1.76` carries, by its own `deps.json`:
+
+```
+PhoenixmlDb.Core/1.6.7   PhoenixmlDb.XQuery/1.6.12   PhoenixmlDb.Xslt/1.6.13
+```
+
+That is the pairing recorded as known-bad — Xslt 1.6.13 depending on XQuery 1.6.12, the artifact
+that `check-release-train.sh` was written to prevent. crucible builds phoenixml.dev, so our own
+documentation has been rendered by the combination we flagged. This release ends that.
+
+### Breaking, inherited from the engine
+
+`ft:*` and `dbxml:metadata` no longer exist; they are `phx:*`, with `phx` predeclared. A
+stylesheet or query using the old names fails at compile time rather than behaving differently.
+See `PhoenixmlDb.Xslt` 2.0.0 for the full list.
+
+### Verified
+
+134 tests pass, unchanged from the 2.0.0 pin.
+
+**The rendered site is byte-identical.** Both pipeline stages were run against the same docs
+source (`phoenixml-docs` @ `8da51b6`, clean) on each engine and diffed:
+
+| stage | files differing |
+|---|---|
+| `ParseOnly` — Markdown to intermediate XML | 0 of 116 |
+| `TransformOnly` — XML to HTML | 0 of 116 |
+
+The arms were confirmed to differ before trusting that result — an A/B that silently runs one
+engine twice produces exactly the same clean diff. Read from each build's `deps.json`:
+
+```
+control:  PhoenixmlDb.Xslt/2.0.0  PhoenixmlDb.XQuery/2.0.0
+new:      PhoenixmlDb.Xslt/2.1.0  PhoenixmlDb.XQuery/2.1.0
+```
+
+So a three-minor-version engine jump changes this site's output by nothing, and that is measured
+rather than assumed.
+
+### Also
+
+`check-release-train.sh` compares engine pins against `<EngineTrain>` in
+`Directory.Packages.props` rather than crucible's own release version, which could never match.
+Before that fix no crucible tag could pass its own gate.
 
 ---
 

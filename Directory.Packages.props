@@ -6,7 +6,7 @@
          engine train and not a member of it: crucible versions on its own 1.1.x line, so
          "pin == this repo's release version" — the rule the engine repos use — can never hold
          here. check-release-train.sh compares the train-locked pins against THIS value. -->
-    <EngineTrain>2.0.0</EngineTrain>
+    <EngineTrain>2.1.0</EngineTrain>
   </PropertyGroup>
   <ItemGroup>
     <!-- PhoenixmlDb. check-pins: train-locked — must equal the release version at pack time.
@@ -19,7 +19,7 @@
          pin behind what is published, check-release-train.sh catches one behind the train being
          released. Bumping it is train work and is deliberately not done in the same change that
          adds the checks. -->
-    <PackageVersion Include="PhoenixmlDb.Xslt" Version="2.0.0" />
+    <PackageVersion Include="PhoenixmlDb.Xslt" Version="2.1.0" />
     <!-- Markdown/YAML -->
     <PackageVersion Include="Markdig" Version="1.3.2" />
     <PackageVersion Include="YamlDotNet" Version="18.1.0" />
