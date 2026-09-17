@@ -18,11 +18,32 @@
 # Mark a pin with "check-pins: train-locked" in the comment above it to opt in. Packages on
 # their own cadence (Core) are deliberately not locked; scripts/check-pins.sh still stops those
 # from falling behind what is published.
+#
+# WHAT "THE TRAIN" MEANS HERE, AND WHY IT IS NOT THIS REPO'S VERSION.
+#
+# This script was ported verbatim from phoenixmldb-xslt, where the repo BEING released is itself
+# a train member: Core, XQuery and Xslt move to 2.1.0 together, so "every train-locked pin equals
+# my own release version" is a meaningful rule.
+#
+# crucible is not a train member. It is a CONSUMER on its own 1.1.x line. Passing crucible's
+# release version here asked whether PhoenixmlDb.Xslt was pinned at "1.1.77" — a version that
+# will never exist — so the gate could only ever FAIL, and every crucible tag was unreleasable.
+# That is the inverse of the defect this project keeps finding (a check that cannot fail); a
+# check that cannot pass is just as useless, and it hid behind never having cut a tag.
+#
+# The operand is therefore the ENGINE train crucible targets, declared as <EngineTrain> in
+# Directory.Packages.props next to the pins it governs.
+#
+# Be clear about what that buys today: crucible has exactly ONE train-locked pin, so this
+# compares that pin against a number written three lines above it. It catches a pin bumped
+# without the declaration moving with it, and it generalises correctly the moment a second
+# engine pin appears. It is NOT what would have caught PhoenixmlDb.Xslt 1.6.13 sitting here for
+# three releases — that was staleness, and check-pins.sh is the check for it.
 set -uo pipefail
 
 version="${1:-}"
 props="${2:-Directory.Packages.props}"
-[ -n "$version" ] || { echo "usage: check-release-train.sh <release-version> [props]"; exit 2; }
+[ -n "$version" ] || { echo "usage: check-release-train.sh <engine-train-version> [props]"; exit 2; }
 version="${version#v}"
 [ -f "$props" ] || { echo "check-release-train: no $props here"; exit 2; }
 
