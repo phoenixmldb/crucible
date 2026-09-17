@@ -1,6 +1,12 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Which PhoenixmlDb engine train this release of crucible targets.
+         Declared here, next to the pins it governs, because crucible is a CONSUMER of the
+         engine train and not a member of it: crucible versions on its own 1.1.x line, so
+         "pin == this repo's release version" — the rule the engine repos use — can never hold
+         here. check-release-train.sh compares the train-locked pins against THIS value. -->
+    <EngineTrain>2.0.0</EngineTrain>
   </PropertyGroup>
   <ItemGroup>
     <!-- PhoenixmlDb. check-pins: train-locked — must equal the release version at pack time.

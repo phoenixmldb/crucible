@@ -54,9 +54,16 @@ jobs:
       - name: Engine pins are not stale
         run: ./scripts/check-pins.sh
 
+      # The operand is the ENGINE train this release targets, NOT crucible's own version.
+      # crucible versions on its own 1.1.x line, so passing steps.version.outputs.version here
+      # asked for a "PhoenixmlDb.Xslt 1.1.77" that will never exist and failed every tag.
       - name: Engine pins match this release train
         if: startsWith(github.ref, 'refs/tags/v')
-        run: ./scripts/check-release-train.sh "${{ steps.version.outputs.version }}"
+        run: |
+          TRAIN=$(grep -oP '(?<=<EngineTrain>)[^<]+' Directory.Packages.props | head -1 | tr -d '[:space:]')
+          [ -n "$TRAIN" ] || { echo "::error::No <EngineTrain> in Directory.Packages.props"; exit 1; }
+          echo "Engine train: $TRAIN (crucible release: ${{ steps.version.outputs.version }})"
+          ./scripts/check-release-train.sh "$TRAIN"
 
       - name: Restore
         run: dotnet restore Crucible.slnx
