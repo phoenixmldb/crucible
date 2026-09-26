@@ -1,5 +1,38 @@
 # Releases
 
+## 1.3.0 — 2026-09-26
+
+**Takes `PhoenixmlDb.Xslt` from 2.1.0 to 2.2.0.** No Crucible source changed; the engine did.
+
+Minor rather than patch because the engine carries behaviour changes — see `PhoenixmlDb.Xslt`
+2.2.0 — even though none of them alter what this tool produces.
+
+### Verified
+
+134 tests pass, unchanged from the 2.1.0 pin.
+
+**The rendered site is byte-identical**, both pipeline stages, against the same docs source
+(`phoenixml-docs` @ `1be1049`):
+
+| stage | files differing |
+|---|---|
+| `ParseOnly` — Markdown to intermediate XML | 0 of 116 |
+| `TransformOnly` — XML to HTML | 0 of 116 |
+
+The arms were confirmed to differ before that result was trusted — an A/B that silently runs one
+engine twice produces exactly the same clean diff. Read from each build's `deps.json`:
+
+```
+control:  PhoenixmlDb.Xslt/2.1.0  PhoenixmlDb.XQuery/2.1.0
+new:      PhoenixmlDb.Xslt/2.2.0  PhoenixmlDb.XQuery/2.2.0
+```
+
+So a release containing an O(n²) matching fix and nine correctness fixes changes this site's
+output by nothing, which is the reassuring answer rather than a suspicious one: the site's
+stylesheets do not use the constructs those fixes touch.
+
+---
+
 Releases are **tagged**, and the tag is the version. Pushing `v<version>` packs and
 publishes `crucible.cli`; pushes to `main` build and test but never publish.
 
