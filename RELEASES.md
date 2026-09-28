@@ -1,5 +1,34 @@
 # Releases
 
+## 1.4.0 — 2026-09-28
+
+**Takes `PhoenixmlDb.Xslt` from 2.2.0 to 2.4.0** (with XQuery 2.4.0). No Crucible source changed;
+the engine did. That keeps phoenixml.dev rendered by the same engine its API reference documents.
+
+### Verified
+
+**The rendered site is byte-identical** in both pipeline stages, against the same docs source
+(`phoenixml-docs` @ `700910a`):
+
+| stage | files differing |
+|---|---|
+| `ParseOnly`: Markdown to intermediate XML | 0 of 118 |
+| `TransformOnly`: XML to HTML | 0 of 116 |
+
+The two arms were confirmed to differ before that result was trusted, since an A/B that runs one
+engine twice gives the same clean diff. From each build's `deps.json`:
+
+```
+control:  PhoenixmlDb.Xslt/2.2.0  PhoenixmlDb.XQuery/2.2.0   (crucible 1.3.0)
+new:      PhoenixmlDb.Xslt/2.4.0  PhoenixmlDb.XQuery/2.4.0   (this build)
+```
+
+That's expected, not suspicious. 2.4.0's behaviour changes are in streaming, `fn:transform`,
+`fn:namespace-uri`'s type and `distinct-values`, and neither Crucible's stylesheets nor the site's
+use any of them (grepped).
+
+---
+
 ## 1.3.0 — 2026-09-26
 
 **Takes `PhoenixmlDb.Xslt` from 2.1.0 to 2.2.0.** No Crucible source changed; the engine did.
