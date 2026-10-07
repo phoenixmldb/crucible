@@ -24,6 +24,12 @@ internal static class InitCommand
             #   - Crucible.Extensions.Mermaid
             # analytics:          # Opt-in; nothing is emitted unless you set this
             #   ga4: G-XXXXXXXXXX
+            # social:             # Link previews; without it pages get a text-only card
+            #   image: img/icon-256.png      # relative to base-url (make base-url absolute)
+            #   card: summary                # or summary_large_image for a 1200x630 banner
+            #   image-alt: My product
+            #   twitter-site: "@handle"
+            # favicon: favicon.ico
             """).ConfigureAwait(true);
 
         var docsDir = Path.Combine(Directory.GetCurrentDirectory(), "docs");

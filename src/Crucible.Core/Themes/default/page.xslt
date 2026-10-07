@@ -13,6 +13,11 @@
   <xsl:param name="site-title" select="'Documentation'"/>
   <xsl:param name="current-path" select="''"/>
   <xsl:param name="ga4-id" select="''"/>
+  <xsl:param name="social-image" select="''"/>
+  <xsl:param name="social-image-alt" select="''"/>
+  <xsl:param name="social-card" select="''"/>
+  <xsl:param name="twitter-site" select="''"/>
+  <xsl:param name="favicon" select="''"/>
 
   <xsl:variable name="manifest" select="if ($site-manifest-uri != '') then doc($site-manifest-uri) else ()"/>
 
@@ -27,11 +32,38 @@
         </xsl:if>
         <link rel="canonical" href="{c:page-url($base-url, @path)}"/>
         <!-- Open Graph -->
-        <meta property="og:title" content="{@title}"/>
+        <meta property="og:title" content="{@title} — {$site-title}"/>
         <meta property="og:type" content="article"/>
         <meta property="og:url" content="{c:page-url($base-url, @path)}"/>
         <xsl:if test="@description">
           <meta property="og:description" content="{@description}"/>
+        </xsl:if>
+        <meta property="og:site_name" content="{$site-title}"/>
+        <!-- Link previews (X/Twitter and others). A relative image or icon is joined to base-url. -->
+        <xsl:variable name="social-image-url" select="if ($social-image = '') then '' else if (matches($social-image, '^https?://')) then $social-image else concat($base-url, $social-image)"/>
+        <xsl:choose>
+          <xsl:when test="$social-image-url != ''">
+            <meta property="og:image" content="{$social-image-url}"/>
+            <meta name="twitter:card" content="{if ($social-card = 'summary_large_image') then 'summary_large_image' else 'summary'}"/>
+            <meta name="twitter:image" content="{$social-image-url}"/>
+            <xsl:if test="$social-image-alt != ''">
+              <meta property="og:image:alt" content="{$social-image-alt}"/>
+              <meta name="twitter:image:alt" content="{$social-image-alt}"/>
+            </xsl:if>
+          </xsl:when>
+          <xsl:otherwise>
+            <meta name="twitter:card" content="summary"/>
+          </xsl:otherwise>
+        </xsl:choose>
+        <meta name="twitter:title" content="{@title} — {$site-title}"/>
+        <xsl:if test="@description">
+          <meta name="twitter:description" content="{@description}"/>
+        </xsl:if>
+        <xsl:if test="$twitter-site != ''">
+          <meta name="twitter:site" content="{$twitter-site}"/>
+        </xsl:if>
+        <xsl:if test="$favicon != ''">
+          <link rel="icon" href="{if (matches($favicon, '^https?://')) then $favicon else concat($base-url, $favicon)}"/>
         </xsl:if>
         <link rel="stylesheet" href="{$base-url}css/style.css"/>
         <script>

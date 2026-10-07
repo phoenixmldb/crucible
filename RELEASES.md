@@ -1,5 +1,53 @@
 # Releases
 
+## 1.5.0 — 2026-10-07
+
+**Social link previews, a site icon, an analytics advisory, and `PhoenixmlDb.Xslt` 2.6.0.**
+
+### New
+
+- **Link-preview cards.** Optional `crucible.yaml` settings:
+
+  ```yaml
+  social:
+    image: img/icon-256.png      # relative to base-url, or an absolute URL
+    card: summary                # summary (square icon, default) or summary_large_image (1200x630)
+    image-alt: Product name
+    twitter-site: "@handle"
+  favicon: favicon.png
+  ```
+
+  Both themes now emit `og:site_name`, `twitter:card`, `twitter:title` and `twitter:description`
+  on every page, and `og:image` / `twitter:image` (+ alt), `twitter:site` and a `rel="icon"` link
+  when configured. Without `social:` a page gets a text-only `summary` card, where it previously
+  had no card at all. `og:title` now carries the site title as `<title>` does, so a shared home
+  page no longer previews as just "Home".
+- **No analytics is now a visible advisory.** A build that produces pages with no `analytics.ga4`
+  prints `warning: No analytics configured …`. It is a new kind of result
+  (`BuildResult.Advisories`) that `--strict` never escalates, because leaving analytics out is a
+  legitimate choice. phoenixml.dev lost its GA tag silently when analytics went opt-in in 1.2.0.
+
+### Engine
+
+Takes `PhoenixmlDb.Xslt` from 2.4.0 to 2.6.0 (XQuery 2.6.0, Core 2.1.0).
+
+### Verified
+
+phoenixml.dev (286 pages) built three ways from the same source:
+
+| comparison | result |
+|---|---|
+| this release on Xslt 2.4.0 vs on 2.6.0, `ParseOnly` intermediate XML | 0 of 288 files differ |
+| the same, HTML with inter-tag whitespace normalised | 0 of 286 differ |
+| the same, text inside every code block | 0 pages differ |
+| 1.4.0 vs this release, HTML | only the new `<head>` tags, plus indentation |
+
+The raw HTML differs on every page in indentation only: 2.6.0's serializer indents consistently,
+where 2.4.0 drifted further right on each line. That includes the whitespace a `<pre>` carries
+after its `</code>`, which renders the same. No content, link or code sample changed.
+
+---
+
 ## 1.4.0 — 2026-09-28
 
 **Takes `PhoenixmlDb.Xslt` from 2.2.0 to 2.4.0** (with XQuery 2.4.0). No Crucible source changed;

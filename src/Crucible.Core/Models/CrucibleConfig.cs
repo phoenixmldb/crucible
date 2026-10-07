@@ -18,4 +18,10 @@ public sealed class CrucibleConfig
 
     /// <summary>Opt-in analytics. No tracking is emitted when this is null.</summary>
     public AnalyticsConfig? Analytics { get; set; }
+
+    /// <summary>Link-preview cards for social sites. Optional.</summary>
+    public SocialConfig? Social { get; set; }
+
+    /// <summary>The site icon: a path relative to <c>base-url</c>, or an absolute URL. Optional.</summary>
+    public string? Favicon { get; set; }
 }

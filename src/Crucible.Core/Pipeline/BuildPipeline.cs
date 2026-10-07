@@ -31,6 +31,17 @@ public sealed class BuildPipeline
             result.Messages.Add($"Output: {_config.Output}");
         }
 
+        // A site with no analytics configured renders with no tracking tag, by design (opt-in
+        // since 1.2.0). That silently cost phoenixml.dev its analytics when the tag stopped
+        // being hard-coded, so say so on every build that produces pages — as an advisory, which
+        // --strict never escalates, because leaving analytics out is a legitimate choice.
+        if (_options.Stage != BuildStage.ParseOnly && string.IsNullOrWhiteSpace(_config.Analytics?.Ga4))
+        {
+            result.Advisories.Add(
+                "No analytics configured (analytics.ga4 in crucible.yaml): pages carry no tracking tag. " +
+                "Ignore this if that is intended.");
+        }
+
         if (_options.Clean && Directory.Exists(_config.Output))
             Directory.Delete(_config.Output, recursive: true);
 
@@ -66,7 +77,7 @@ public sealed class BuildPipeline
             var transformSw = Stopwatch.StartNew();
             var transformResult = await TransformStage.ExecuteAsync(
                 parseOutput, _config.Output, _config.Theme, _extensions,
-                _config.Analytics, ct).ConfigureAwait(false);
+                _config.Analytics, _config.Social, _config.Favicon, ct).ConfigureAwait(false);
             result.Errors.AddRange(transformResult.Errors);
             result.Warnings.AddRange(transformResult.Warnings);
             result.Messages.AddRange(transformResult.Messages);
@@ -85,7 +96,7 @@ public sealed class BuildPipeline
             var transformSw = Stopwatch.StartNew();
             var transformResult = await TransformStage.ExecuteAsync(
                 _config.Source, _config.Output, _config.Theme, _extensions,
-                _config.Analytics, ct).ConfigureAwait(false);
+                _config.Analytics, _config.Social, _config.Favicon, ct).ConfigureAwait(false);
             result.Errors.AddRange(transformResult.Errors);
             result.Warnings.AddRange(transformResult.Warnings);
             result.Messages.AddRange(transformResult.Messages);

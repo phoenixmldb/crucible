@@ -22,6 +22,13 @@ public sealed class BuildResult
     /// </summary>
     public List<string> Messages { get; } = [];
 
+    /// <summary>
+    /// A configuration choice worth flagging that is legitimate to keep — no analytics, say.
+    /// Printed as a warning so it is seen, but never escalated by <c>--strict</c>: a site may
+    /// deliberately leave it out, and that must not fail its build.
+    /// </summary>
+    public List<string> Advisories { get; } = [];
+
     public bool Success => Errors.Count == 0;
     public Stopwatch? ParseTiming { get; set; }
     public Stopwatch? TransformTiming { get; set; }

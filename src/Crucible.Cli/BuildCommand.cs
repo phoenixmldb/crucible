@@ -74,6 +74,12 @@ internal static class BuildCommand
             await Console.Error.WriteLineAsync($"info: {message}").ConfigureAwait(true);
         }
 
+        // Advisories look like warnings but are never escalated by --strict.
+        foreach (var advisory in result.Advisories)
+        {
+            await Console.Error.WriteLineAsync($"warning: {advisory}").ConfigureAwait(true);
+        }
+
         // Print warnings to stderr
         foreach (var warning in result.Warnings)
         {

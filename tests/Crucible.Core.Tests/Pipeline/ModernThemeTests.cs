@@ -10,7 +10,9 @@ public class ModernThemeTests
     private static async Task<string> BuildAndReadAsync(
         string relativeHtmlPath,
         string baseUrl = "/",
-        AnalyticsConfig? analytics = null)
+        AnalyticsConfig? analytics = null,
+        SocialConfig? social = null,
+        string? favicon = null)
     {
         var sourceDir = Path.Combine(AppContext.BaseDirectory, "Fixtures", "modern-site");
         var intermediateDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
@@ -26,7 +28,7 @@ public class ModernThemeTests
 
             var transformResult = await TransformStage.ExecuteAsync(
                 intermediateDir, outputDir, themePath: "modern", extensions: [],
-                analytics: analytics, ct: ct).ConfigureAwait(false);
+                analytics: analytics, ct: ct, social: social, favicon: favicon).ConfigureAwait(false);
             transformResult.Success.Should().BeTrue();
 
             return await File.ReadAllTextAsync(Path.Combine(outputDir, relativeHtmlPath), ct).ConfigureAwait(false);
@@ -103,6 +105,50 @@ public class ModernThemeTests
 
         html.Should().Contain("https://www.googletagmanager.com/gtag/js?id=G-TESTID123");
         html.Should().Contain("gtag('config', 'G-TESTID123')");
+    }
+
+    [Fact]
+    public async Task Build_WithoutSocialConfig_EmitsATextSummaryCard()
+    {
+        var html = await BuildAndReadAsync("index.html");
+
+        html.Should().Contain("<meta name=\"twitter:card\" content=\"summary\"");
+        html.Should().NotContain("og:image");
+        html.Should().NotContain("rel=\"icon\"");
+    }
+
+    [Fact]
+    public async Task Build_WithSocialImage_EmitsASummaryCardAgainstBaseUrl()
+    {
+        var html = await BuildAndReadAsync("index.html", baseUrl: "https://example.test/",
+            social: new SocialConfig { Image = "img/card.png", ImageAlt = "Card", TwitterSite = "@example" },
+            favicon: "favicon.png");
+
+        html.Should().Contain("<meta property=\"og:image\" content=\"https://example.test/img/card.png\"");
+        html.Should().Contain("<meta name=\"twitter:card\" content=\"summary\"");
+        html.Should().Contain("<meta name=\"twitter:image\" content=\"https://example.test/img/card.png\"");
+        html.Should().Contain("<meta name=\"twitter:image:alt\" content=\"Card\"");
+        html.Should().Contain("<meta name=\"twitter:site\" content=\"@example\"");
+        html.Should().Contain("<meta property=\"og:site_name\" content=\"Modern Site\"");
+        html.Should().Contain("<link rel=\"icon\" href=\"https://example.test/favicon.png\"");
+    }
+
+    [Fact]
+    public async Task Build_WithAbsoluteSocialImage_UsesItAsIs()
+    {
+        var html = await BuildAndReadAsync("index.html", baseUrl: "https://example.test/",
+            social: new SocialConfig { Image = "https://cdn.example.test/card.png" });
+
+        html.Should().Contain("<meta property=\"og:image\" content=\"https://cdn.example.test/card.png\"");
+    }
+
+    [Fact]
+    public async Task Build_WithLargeImageCard_EmitsThatCardType()
+    {
+        var html = await BuildAndReadAsync("index.html", baseUrl: "https://example.test/",
+            social: new SocialConfig { Image = "img/banner.png", Card = "summary_large_image" });
+
+        html.Should().Contain("<meta name=\"twitter:card\" content=\"summary_large_image\"");
     }
 
     [Fact]
