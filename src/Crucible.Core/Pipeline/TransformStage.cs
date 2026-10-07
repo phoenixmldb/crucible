@@ -17,6 +17,8 @@ public static class TransformStage
         string? themePath,
         IEnumerable<ICrucibleExtension> extensions,
         AnalyticsConfig? analytics = null,
+        SocialConfig? social = null,
+        string? favicon = null,
         CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(inputDir);
@@ -94,6 +96,11 @@ public static class TransformStage
                 transformer.SetParameter("site-title", siteTitle);
                 transformer.SetParameter("current-path", currentPath);
                 transformer.SetParameter("ga4-id", analytics?.Ga4 ?? "");
+                transformer.SetParameter("social-image", social?.Image ?? "");
+                transformer.SetParameter("social-image-alt", social?.ImageAlt ?? "");
+                transformer.SetParameter("social-card", social?.Card ?? "");
+                transformer.SetParameter("twitter-site", social?.TwitterSite ?? "");
+                transformer.SetParameter("favicon", favicon ?? "");
 
                 var documentXml = await File.ReadAllTextAsync(xmlFile, ct).ConfigureAwait(false);
                 var html = await transformer.TransformAsync(documentXml, ct).ConfigureAwait(false);
