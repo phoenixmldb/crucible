@@ -64,7 +64,7 @@ public sealed class StrictModeTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private async Task<BuildResult> BuildAsync(bool strict, bool verbose = false)
+    private async Task<BuildResult> BuildAsync(bool strict, bool verbose = false, string? ga4 = null)
     {
         var config = new CrucibleConfig
         {
@@ -72,6 +72,7 @@ public sealed class StrictModeTests : IDisposable
             Output = _output,
             Title = "Strict Site",
             BaseUrl = "/",
+            Analytics = ga4 is null ? null : new AnalyticsConfig { Ga4 = ga4 },
         };
 
         var pipeline = new BuildPipeline(config, [],
@@ -112,6 +113,29 @@ public sealed class StrictModeTests : IDisposable
         result.Success.Should().BeTrue(
             "a draft is the author's intent, not a defect — escalating it would make " +
             "--strict unusable on any site with work in progress");
+    }
+
+    [Fact]
+    public async Task WithStrict_NoAnalyticsIsAnAdvisoryNotAFailure()
+    {
+        WriteDraftAndHealthyPage();
+
+        var result = await BuildAsync(strict: true);
+
+        result.Advisories.Should().ContainSingle()
+            .Which.Should().Contain("analytics.ga4", "a site that dropped its tag should be told");
+        result.Success.Should().BeTrue("leaving analytics out is a legitimate choice, so --strict must not fail it");
+    }
+
+    [Fact]
+    public async Task WithAnalyticsConfigured_NoAdvisory()
+    {
+        WriteDraftAndHealthyPage();
+
+        var result = await BuildAsync(strict: true, ga4: "G-TESTID123");
+
+        result.Advisories.Should().BeEmpty();
+        result.Success.Should().BeTrue();
     }
 
     [Fact]
