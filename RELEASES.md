@@ -1,5 +1,59 @@
 # Releases
 
+## 1.6.0 — 2026-10-26
+
+**In-body links and `llms.txt` now use the same URLs as the rest of the site.**
+
+### Fixed
+
+- **In-body `.md` cross-links resolve to the site's URL form.** `[Upload API](../api/upload.md)`
+  emitted `../api/upload.html`; it now emits `../api/upload`. A link to a directory's
+  `index.md` collapses to the directory — `guides/index.md` → `guides/` — exactly as nav
+  links, `canonical`, `og:url`, sitemap `<loc>` and search results already did.
+- **`llms.txt` and `llms-full.txt` carry the same URLs.** Every entry had `.html` appended, so
+  a site's root was advertised as `<base-url>index.html`. It is now `<base-url>`.
+
+1.1.48 introduced `c:page-url` under the heading "URL construction is defined once", and it
+was — for the producers written in XSLT, plus `search.js`, which mirrors the rule in
+JavaScript. The two written in C# were never brought in, and kept appending `.html` for the
+three months since. `Crucible.Core.Urls.PageUrl` is now the C# half of that rule; both call
+it, and `PageUrlTests` pins it to the XSLT by text the same way `LinkFormatTests` already
+pinned `search.js`.
+
+On a host that serves clean URLs this meant a redirect on every internal prose link and every
+`llms.txt` entry. Nothing broke — a 308 resolves, and the canonical page is the one that
+indexes — but it spent crawl budget, put a hop on every internal link, and filled Search
+Console's "Page with redirect" bucket with duplicates of pages that were already fine.
+
+### Compatibility
+
+Internal link hrefs change shape in built output. Crucible has emitted extensionless nav,
+`canonical` and sitemap URLs since 1.1.48, so a host that does not resolve extensionless paths
+already served a site whose navigation and canonical tags pointed at 404s; this finishes
+applying that requirement rather than adding it. Cloudflare Pages, Netlify, Vercel, GitHub
+Pages and S3-with-rewrites are unaffected apart from no longer issuing the redirects.
+
+### Engine
+
+Takes `PhoenixmlDb.Xslt` from 2.6.0 to 2.9.0. The pin had not moved since 2026-10-05 and
+`check-pins.sh` had been failing on it; 2.7.0-2.9.0 are schema-awareness work that Crucible,
+which validates nothing, does not reach. phoenixml.dev (125 pages, 138 files) and pixault.dev
+(36 pages, 45 files) build byte-identically on both engines.
+
+### Verified
+
+The pixault.dev documentation (36 pages) built from identical sources on 1.5.0 and on this
+release:
+
+| measure | 1.5.0 | 1.6.0 |
+|---|---|---|
+| internal `.html` hrefs across all pages | 36 | 0 |
+| `.html` URLs in `llms.txt` / `llms-full.txt` | 36 / 36 | 0 / 0 |
+| image and script `src` attributes | — | identical, no change |
+| distinct URLs produced, fetched against the live site | — | 37 of 37 answer `200`; none redirects |
+
+---
+
 ## 1.5.0 — 2026-10-07
 
 **Social link previews, a site icon, an analytics advisory, and `PhoenixmlDb.Xslt` 2.6.0.**

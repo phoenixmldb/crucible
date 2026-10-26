@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using Crucible.Core.Urls;
 
 /// <summary>
 /// Generates llms.txt and llms-full.txt files for AI model consumption.
@@ -99,7 +100,7 @@ public static class LlmsTxtGenerator
 
             foreach (var doc in section)
             {
-                llmsTxt.Append($"- [{doc.Title}]({baseUrl}{doc.Path}.html)");
+                llmsTxt.Append($"- [{doc.Title}]({PageUrl.FromPath(baseUrl, doc.Path)})");
                 if (!string.IsNullOrEmpty(doc.Description))
                     llmsTxt.Append($": {doc.Description}");
                 llmsTxt.AppendLine();
@@ -124,7 +125,7 @@ public static class LlmsTxtGenerator
             fullTxt.AppendLine($"## {doc.Title}");
             if (!string.IsNullOrEmpty(doc.Description))
                 fullTxt.AppendLine($"> {doc.Description}");
-            fullTxt.AppendLine($"URL: {baseUrl}{doc.Path}.html");
+            fullTxt.AppendLine($"URL: {PageUrl.FromPath(baseUrl, doc.Path)}");
             fullTxt.AppendLine();
             fullTxt.AppendLine(doc.Body);
             fullTxt.AppendLine();

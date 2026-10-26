@@ -1,5 +1,7 @@
 namespace Crucible.Core.Parsing;
 
+using Crucible.Core.Urls;
+
 public sealed class LinkResolver
 {
     private readonly HashSet<string> _knownPaths;
@@ -37,14 +39,21 @@ public sealed class LinkResolver
             return new LinkResult(href + (fragment ?? ""), IsBroken: false);
         }
 
-        // Rewrite .md to .html
-        var htmlHref = string.Concat(href.AsSpan(0, href.Length - 3), ".html");
+        // Resolve the .md link to the URL the rest of the pipeline uses for that
+        // page. This used to append ".html", which every clean-URL host answers
+        // with a 308 to the form below -- see PageUrl for what that cost.
+        var urlHref = PageUrl.CollapseIndex(href[..^3]);
+
+        // Collapsing a bare "index.md" leaves nothing, and an empty href means
+        // "this page". "./" is the directory the collapse was aiming at anyway.
+        if (urlHref.Length == 0)
+            urlHref = "./";
 
         // Check if target exists
         var targetPath = ResolvePath(href[..^3], currentPath, href.StartsWith('/'));
         var isBroken = targetPath != null && !_knownPaths.Contains(targetPath);
 
-        return new LinkResult(htmlHref + (fragment ?? ""), isBroken);
+        return new LinkResult(urlHref + (fragment ?? ""), isBroken);
     }
 
     private static string? ResolvePath(string target, string currentPath, bool isRootRelative)

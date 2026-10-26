@@ -7,15 +7,21 @@ using Xunit;
 /// <summary>
 /// Pins the URL shape the themes emit.
 ///
-/// Links are produced in three places that must agree: nav/canonical in
-/// page.xslt, &lt;loc&gt; in _base/sitemap.xslt, and result hrefs in search.js.
+/// Links are produced in five places that must agree: nav/canonical in
+/// page.xslt, &lt;loc&gt; in _base/sitemap.xslt, result hrefs in search.js,
+/// in-body cross-links in LinkResolver, and llms.txt in LlmsTxtGenerator.
 /// Nothing asserted on link format before, so the switch to extensionless URLs
 /// changed every link on every page without a single test failing — and left
 /// search.js emitting ".html" against a canonical that said otherwise.
+///
+/// The first version of this class covered only the three XSLT/JS producers.
+/// The two written in C# kept emitting ".html" for another two releases, which
+/// is how pixault.dev ended up advertising 36 llms.txt URLs and 27 prose-link
+/// targets that all 308 to the canonical page.
 /// </summary>
 public class LinkFormatTests
 {
-    private static async Task<(string Html, string Sitemap)> BuildAsync(
+    private static async Task<(string Html, string Sitemap, string LlmsTxt)> BuildAsync(
         string theme, string relativeHtmlPath, string baseUrl = "/")
     {
         var sourceDir = Path.Combine(AppContext.BaseDirectory, "Fixtures", "full-site");
@@ -37,7 +43,8 @@ public class LinkFormatTests
 
             return (
                 await File.ReadAllTextAsync(Path.Combine(outputDir, relativeHtmlPath), ct).ConfigureAwait(false),
-                await File.ReadAllTextAsync(Path.Combine(outputDir, "sitemap.xml"), ct).ConfigureAwait(false));
+                await File.ReadAllTextAsync(Path.Combine(outputDir, "sitemap.xml"), ct).ConfigureAwait(false),
+                await File.ReadAllTextAsync(Path.Combine(outputDir, "llms.txt"), ct).ConfigureAwait(false));
         }
         finally
         {
@@ -51,7 +58,7 @@ public class LinkFormatTests
     [InlineData("modern")]
     public async Task NavLinks_AreExtensionless(string theme)
     {
-        var (html, _) = await BuildAsync(theme, "index.html", baseUrl: "/docs/");
+        var (html, _, _) = await BuildAsync(theme, "index.html", baseUrl: "/docs/");
 
         html.Should().Contain("href=\"/docs/getting-started/quick-start\"");
         html.Should().NotContain("getting-started/quick-start.html");
@@ -62,7 +69,7 @@ public class LinkFormatTests
     [InlineData("modern")]
     public async Task CanonicalAndOgUrl_AreExtensionless(string theme)
     {
-        var (html, _) = await BuildAsync(theme,
+        var (html, _, _) = await BuildAsync(theme,
             Path.Combine("getting-started", "quick-start.html"), baseUrl: "/docs/");
 
         html.Should().Contain("rel=\"canonical\" href=\"/docs/getting-started/quick-start\"");
@@ -74,7 +81,7 @@ public class LinkFormatTests
     [InlineData("modern")]
     public async Task SiteRoot_CollapsesToBaseUrl(string theme)
     {
-        var (html, sitemap) = await BuildAsync(theme, "index.html", baseUrl: "/docs/");
+        var (html, sitemap, _) = await BuildAsync(theme, "index.html", baseUrl: "/docs/");
 
         // The root page's own canonical is the base URL, not "/docs/index".
         html.Should().Contain("rel=\"canonical\" href=\"/docs/\"");
@@ -87,10 +94,50 @@ public class LinkFormatTests
     [InlineData("modern")]
     public async Task SitemapLocations_AreExtensionless(string theme)
     {
-        var (_, sitemap) = await BuildAsync(theme, "index.html", baseUrl: "/docs/");
+        var (_, sitemap, _) = await BuildAsync(theme, "index.html", baseUrl: "/docs/");
 
         sitemap.Should().Contain("<loc>/docs/getting-started/quick-start</loc>");
         sitemap.Should().NotContain(".html");
+    }
+
+    [Theory]
+    [InlineData("default")]
+    [InlineData("modern")]
+    public async Task BodyCrossLinks_AreExtensionless(string theme)
+    {
+        // The fixture homepage links to getting-started/installation.md in prose.
+        // This is the producer the original version of this class did not cover.
+        var (html, _, _) = await BuildAsync(theme, "index.html", baseUrl: "/docs/");
+
+        html.Should().Contain("href=\"getting-started/installation\"");
+        html.Should().NotContain("getting-started/installation.html");
+    }
+
+    [Theory]
+    [InlineData("default")]
+    [InlineData("modern")]
+    public async Task RootRelativeBodyCrossLinks_AreExtensionless(string theme)
+    {
+        // quick-start.md links to /reference/api.md — root-relative, so it exercises
+        // the other branch of LinkResolver.ResolvePath.
+        var (html, _, _) = await BuildAsync(theme,
+            Path.Combine("getting-started", "quick-start.html"), baseUrl: "/docs/");
+
+        html.Should().Contain("href=\"/reference/api\"");
+        html.Should().NotContain("/reference/api.html");
+    }
+
+    [Theory]
+    [InlineData("default")]
+    [InlineData("modern")]
+    public async Task LlmsTxt_IsExtensionless(string theme)
+    {
+        var (_, _, llmsTxt) = await BuildAsync(theme, "index.html", baseUrl: "/docs/");
+
+        llmsTxt.Should().Contain("(/docs/getting-started/quick-start)");
+        llmsTxt.Should().Contain("(/docs/)",
+            "the site root collapses to the base URL here exactly as it does in the sitemap");
+        llmsTxt.Should().NotContain(".html");
     }
 
     [Theory]
