@@ -181,13 +181,13 @@ public class MarkdownToXmlEmitterTests
     }
 
     [Fact]
-    public void Emit_InternalMdLink_RewrittenToHtml()
+    public void Emit_InternalMdLink_RewrittenToExtensionlessUrl()
     {
         var resolver = new LinkResolver(["getting-started/installation"]);
         var doc = Emit("[Install](getting-started/installation.md)",
             path: "index", linkResolver: resolver);
         var link = doc.Root!.Element("body")!.Element("paragraph")!.Element("link")!;
-        link.Attribute("href")!.Value.Should().Be("getting-started/installation.html");
+        link.Attribute("href")!.Value.Should().Be("getting-started/installation");
     }
 
     [Fact]

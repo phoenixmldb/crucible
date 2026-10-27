@@ -341,7 +341,7 @@ public static class MarkdownToXmlEmitter
         {
             var href = link.Url ?? "";
 
-            // Resolve internal .md links to .html
+            // Resolve internal .md links to the site's URL form (see PageUrl)
             if (ctx.LinkResolver != null && !string.IsNullOrEmpty(href))
             {
                 var resolved = ctx.LinkResolver.Resolve(href, ctx.DocumentPath);
