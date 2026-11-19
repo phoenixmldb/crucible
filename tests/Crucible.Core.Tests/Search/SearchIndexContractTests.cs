@@ -32,7 +32,7 @@ public class SearchIndexContractTests
             var json = await File.ReadAllTextAsync(
                 Path.Combine(intermediateDir, "search-index.json"), ct).ConfigureAwait(false);
 
-            return JsonDocument.Parse(json).RootElement.Clone();
+            return JsonElement.Parse(json);
         }
         finally
         {

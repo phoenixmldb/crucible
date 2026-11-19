@@ -29,6 +29,13 @@
     <None Include="$(MSBuildThisFileDirectory)PACKAGE.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
+  <!-- Test projects run on Microsoft.Testing.Platform (see global.json). Keyed on the project
+       name because IsTestProject is not yet defined when this file is evaluated. -->
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+    <OutputType>Exe</OutputType>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <DebugType>embedded</DebugType>
     <DebugSymbols>true</DebugSymbols>
