@@ -2,7 +2,7 @@
 
 ## 1.7.0 — unreleased
 
-**`PhoenixmlDb.Xslt` 3.2.0. Code blocks no longer end with stray indentation.**
+**`PhoenixmlDb.Xslt` 3.2.0 and Markdig 1.6.0. Code blocks no longer end with stray indentation.**
 
 ### Engine
 
@@ -28,6 +28,19 @@ With `indent="yes"`, both themes and the sitemap now serialize in Saxon's layout
   two inline elements is unchanged everywhere.
 - Boolean attributes are minimized: `hidden="hidden"` → `hidden`, `async="async"` → `async`.
 - `sitemap.xml` puts `<urlset>` on the line after the XML declaration.
+
+### Packages
+
+- **Markdig 1.3.2 → 1.6.0.** phoenixml.dev (139 files) and pixault.dev (45 files) build
+  byte-identically on both versions.
+- **Tests run on Microsoft.Testing.Platform.** xunit.v3 4.x (from 3.2.2) does not run under
+  VSTest on the .NET 10 SDK. The new `global.json` selects the MTP runner, and
+  `Directory.Build.props` turns it on for `*.Tests` projects. The VSTest-only packages
+  `Microsoft.NET.Test.Sdk` and `xunit.runner.visualstudio` are removed. `coverlet.collector` is
+  replaced by `coverlet.MTP` 10.1.1 (`dotnet test --coverlet`). `dotnet test Crucible.slnx`
+  works as before. A VSTest `--filter` expression does not; use xunit's `--filter-class`,
+  `--filter-method` or `--filter-query`.
+- FluentAssertions stays at 6.12.2, the last MIT-licensed release.
 
 ### Verified
 
