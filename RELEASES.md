@@ -1,5 +1,51 @@
 # Releases
 
+## 1.7.0 — unreleased
+
+**`PhoenixmlDb.Xslt` 3.2.0. Code blocks no longer end with stray indentation.**
+
+### Engine
+
+Takes `PhoenixmlDb.Xslt` from 2.9.0 to 3.2.0, crossing the engine's 3.0.0 major version.
+None of the breaking changes in 3.0.0–3.2.0 reaches Crucible's own code:
+
+- Both stylesheets load with a file base URI, so the 3.2.0 rule that a relative URI with no
+  base is an error (#485) does not apply to them.
+- Crucible does not use the AST namespace dictionaries that 3.0.0 made read-only.
+- The themes use no streaming, packages, `xsl:accept`, or schema-typed `as=`.
+
+A user theme that does any of these is affected as the engine notes describe.
+
+### Output changes
+
+With `indent="yes"`, both themes and the sitemap now serialize in Saxon's layout (#559):
+
+- **`<pre>` blocks end exactly where the code ends.** 2.9.0 wrote indentation between
+  `</code>` and `</pre>`, which the HTML serializer must not do inside `pre`. Because `pre`
+  keeps whitespace, this can show as an empty line at the bottom of a code box. The two sites
+  had 2,054 such blocks, on 115 of 139 phoenixml.dev files and 27 of 45 pixault.dev files.
+- An inline end tag stays on the line of its parent (`<a>…</a></li>`). Whitespace between
+  two inline elements is unchanged everywhere.
+- Boolean attributes are minimized: `hidden="hidden"` → `hidden`, `async="async"` → `async`.
+- `sitemap.xml` puts `<urlset>` on the line after the XML declaration.
+
+### Verified
+
+phoenixml.dev and pixault.dev were built from identical sources with a CLI on each engine.
+The engines were confirmed distinct from `deps.json`.
+
+| measure | phoenixml.dev | pixault.dev |
+|---|---|---|
+| files produced, 2.9.0 / 3.2.0 | 139 / 139 | 45 / 45 |
+| files that differ | 127 | 37 |
+| files with a difference other than whitespace and `hidden`/`async` minimization | 0 | 0 |
+| `<pre>` differences that are not the removed trailing indentation | 0 | 0 |
+| files where whitespace between inline elements changed | 0 | 0 |
+
+Tests: 163 of 163 pass. `check-pins.sh` and `check-release-train.sh 3.2.0` pass.
+
+---
+
 ## 1.6.0 — 2026-10-26
 
 **In-body links and `llms.txt` now use the same URLs as the rest of the site.**
