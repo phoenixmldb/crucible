@@ -1,5 +1,73 @@
 # Releases
 
+## 1.7.0 — unreleased
+
+**`PhoenixmlDb.Xslt` 3.2.0 and Markdig 1.6.0. Code blocks no longer end with stray indentation.**
+
+### Engine
+
+Takes `PhoenixmlDb.Xslt` from 2.9.0 to 3.2.0, crossing the engine's 3.0.0 major version.
+None of the breaking changes in 3.0.0–3.2.0 reaches Crucible's own code:
+
+- Both stylesheets load with a file base URI, so the 3.2.0 rule that a relative URI with no
+  base is an error (#485) does not apply to them.
+- Crucible does not use the AST namespace dictionaries that 3.0.0 made read-only.
+- The themes use no streaming, packages, `xsl:accept`, or schema-typed `as=`.
+
+A user theme that does any of these is affected as the engine notes describe.
+
+### Output changes
+
+With `indent="yes"`, both themes and the sitemap now serialize in Saxon's layout (#559):
+
+- **`<pre>` blocks end exactly where the code ends.** 2.9.0 wrote indentation between
+  `</code>` and `</pre>`, which the HTML serializer must not do inside `pre`. Because `pre`
+  keeps whitespace, this can show as an empty line at the bottom of a code box. The two sites
+  had 2,054 such blocks, on 115 of 139 phoenixml.dev files and 27 of 45 pixault.dev files.
+- An inline end tag stays on the line of its parent (`<a>…</a></li>`). Whitespace between
+  two inline elements is unchanged everywhere.
+- Boolean attributes are minimized: `hidden="hidden"` → `hidden`, `async="async"` → `async`.
+- `sitemap.xml` puts `<urlset>` on the line after the XML declaration.
+
+### .NET 11
+
+- **crucible.cli ships net11.0 and net10.0 builds.** `dotnet tool install` picks the newest one
+  the machine can run, so a machine with only .NET 10 keeps working. Both builds render
+  phoenixml.dev byte-identically (139 files).
+- **The repository builds with SDK 11.** `global.json` pins 11.0.100 (`rollForward:
+  latestFeature`). With SDK 10 the solution still builds, for net10.0 only, and CI keeps a job
+  that proves it.
+
+### Packages
+
+- **Markdig 1.3.2 → 1.6.0.** phoenixml.dev (139 files) and pixault.dev (45 files) build
+  byte-identically on both versions.
+- **Tests run on Microsoft.Testing.Platform.** xunit.v3 4.x (from 3.2.2) does not run under
+  VSTest on the .NET 10 SDK. The new `global.json` selects the MTP runner, and
+  `Directory.Build.props` turns it on for `*.Tests` projects. The VSTest-only packages
+  `Microsoft.NET.Test.Sdk` and `xunit.runner.visualstudio` are removed. `coverlet.collector` is
+  replaced by `coverlet.MTP` 10.1.1 (`dotnet test --coverlet`). `dotnet test Crucible.slnx`
+  works as before. A VSTest `--filter` expression does not; use xunit's `--filter-class`,
+  `--filter-method` or `--filter-query`.
+- FluentAssertions stays at 6.12.2, the last MIT-licensed release.
+
+### Verified
+
+phoenixml.dev and pixault.dev were built from identical sources with a CLI on each engine.
+The engines were confirmed distinct from `deps.json`.
+
+| measure | phoenixml.dev | pixault.dev |
+|---|---|---|
+| files produced, 2.9.0 / 3.2.0 | 139 / 139 | 45 / 45 |
+| files that differ | 127 | 37 |
+| files with a difference other than whitespace and `hidden`/`async` minimization | 0 | 0 |
+| `<pre>` differences that are not the removed trailing indentation | 0 | 0 |
+| files where whitespace between inline elements changed | 0 | 0 |
+
+Tests: 163 of 163 pass. `check-pins.sh` and `check-release-train.sh 3.2.0` pass.
+
+---
+
 ## 1.6.0 — 2026-10-26
 
 **In-body links and `llms.txt` now use the same URLs as the rest of the site.**

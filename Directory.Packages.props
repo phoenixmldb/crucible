@@ -6,7 +6,7 @@
          engine train and not a member of it: crucible versions on its own 1.1.x line, so
          "pin == this repo's release version" — the rule the engine repos use — can never hold
          here. check-release-train.sh compares the train-locked pins against THIS value. -->
-    <EngineTrain>2.9.0</EngineTrain>
+    <EngineTrain>3.2.0</EngineTrain>
   </PropertyGroup>
   <ItemGroup>
     <!-- PhoenixmlDb. check-pins: train-locked — must equal the release version at pack time.
@@ -19,16 +19,18 @@
          pin behind what is published, check-release-train.sh catches one behind the train being
          released. Bumping it is train work and is deliberately not done in the same change that
          adds the checks. -->
-    <PackageVersion Include="PhoenixmlDb.Xslt" Version="2.9.0" />
+    <PackageVersion Include="PhoenixmlDb.Xslt" Version="3.2.0" />
     <!-- Markdown/YAML -->
-    <PackageVersion Include="Markdig" Version="1.3.2" />
+    <PackageVersion Include="Markdig" Version="1.6.0" />
     <PackageVersion Include="YamlDotNet" Version="18.1.0" />
   </ItemGroup>
   <ItemGroup>
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
-    <PackageVersion Include="xunit.v3" Version="3.2.2" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
-    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
+    <!-- Tests run on Microsoft.Testing.Platform (global.json "test.runner"), which xunit.v3
+         4.x requires on the .NET 10 SDK. Microsoft.NET.Test.Sdk, xunit.runner.visualstudio and
+         coverlet.collector are VSTest-only and are deliberately absent; coverage on MTP is
+         coverlet.MTP, enabled with the coverlet option of dotnet test. -->
+    <PackageVersion Include="xunit.v3" Version="4.0.3" />
+    <PackageVersion Include="coverlet.MTP" Version="10.1.1" />
     <!-- Intentionally pinned. 7.x/8.x moved to the Xceed license (paid for commercial
          use); 6.12.2 is the last MIT release. Do not bump without a licensing decision. -->
     <PackageVersion Include="FluentAssertions" Version="6.12.2" />

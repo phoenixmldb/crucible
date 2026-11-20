@@ -6,10 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit.v3" />
-    <PackageReference Include="xunit.runner.visualstudio" />
-    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="coverlet.MTP" />
     <PackageReference Include="FluentAssertions" />
   </ItemGroup>
 
@@ -31,7 +29,9 @@
     the app base directory, not its subdirectories, so SamplePlugin.Support is reachable
     only if the plugin loader resolves it.
   -->
-  <Target Name="StageSamplePlugin" AfterTargets="Build">
+  <!-- Inner (per-framework) builds only: the outer multi-targeting build has no
+       TargetFramework, so it would look for bin/<config>//*.dll and fail. -->
+  <Target Name="StageSamplePlugin" AfterTargets="Build" Condition="'$(TargetFramework)' != ''">
     <ItemGroup>
       <SamplePluginOutput Include="$(MSBuildThisFileDirectory)../fixtures/SamplePlugin/bin/$(Configuration)/$(TargetFramework)/*.dll" />
       <SamplePluginOutput Include="$(MSBuildThisFileDirectory)../fixtures/SamplePlugin/bin/$(Configuration)/$(TargetFramework)/*.deps.json" />
