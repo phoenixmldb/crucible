@@ -30,8 +30,10 @@ jobs:
 
       - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '10.0.x'
-          dotnet-quality: 'preview'
+          # SDK 11 builds (global.json); the 10 runtime runs the net10.0 tests.
+          dotnet-version: |
+            10.0.x
+            11.0.x
 
       - name: Determine version
         id: version
@@ -114,6 +116,38 @@ jobs:
           name: nuget-packages
           path: ./artifacts/*.nupkg
 
+  # The same build on SDK 10. global.json pins SDK 11; this job repoints it, so the solution
+  # builds net10.0 alone (Directory.Build.props adds net11.0 only on SDK 11). It proves the
+  # net10.0 build needs nothing from SDK 11, and that a host still on SDK 10 can build.
+  build-sdk10:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Select SDK 10
+        run: |
+          python3 - <<'PY'
+          import json
+          g = json.load(open("global.json"))
+          g["sdk"] = {"version": "10.0.100", "rollForward": "latestFeature"}
+          json.dump(g, open("global.json", "w"), indent=2)
+          PY
+          dotnet --version
+          case "$(dotnet --version)" in 10.*) ;; *) echo "::error::expected SDK 10"; exit 1 ;; esac
+
+      - name: Restore
+        run: dotnet restore Crucible.slnx
+
+      - name: Build
+        run: dotnet build Crucible.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test Crucible.slnx -c Release --no-restore --no-build --verbosity normal
+
   # Installs the packed tool exactly as a user would, from a local feed. The test
   # suite runs on ProjectReferences and never touches a .nupkg, so it cannot see
   # packaging faults — which is how crucible.extensions shipped unrestorable five
@@ -126,8 +160,10 @@ jobs:
     steps:
       - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '10.0.x'
-          dotnet-quality: 'preview'
+          # SDK 11 builds (global.json); the 10 runtime runs the net10.0 tests.
+          dotnet-version: |
+            10.0.x
+            11.0.x
 
       - name: Download artifacts
         uses: actions/download-artifact@v8
@@ -178,21 +214,37 @@ jobs:
             *) echo "::error::--version reported '$reported', expected $PKG_VERSION"; exit 1 ;;
           esac
 
-      - name: Tool builds a site with each built-in theme
+      # The package ships one build per target framework, and the installed shim runs only the
+      # newest the runner can load. Each build is run directly, so the net10.0 one is smoked
+      # too and a target that silently goes missing fails here.
+      - name: Package ships net10.0 and net11.0
+        run: |
+          store=$(find ./tool/.store -type d -path '*/tools/*/any' | sort)
+          echo "$store"
+          for tfm in net10.0 net11.0; do
+            echo "$store" | grep -q "/tools/$tfm/any$" || { echo "::error::no $tfm build in the package"; exit 1; }
+          done
+
+      - name: Each build builds a site with each built-in theme
         run: |
           mkdir site && cd site
           ../tool/crucible init
+          for dir in $(find ../tool/.store -type d -path '*/tools/*/any' | sort); do
+            tfm=$(basename "$(dirname "$dir")")
+            crucible() { dotnet "$dir/crucible.dll" "$@"; }
+            echo "== $tfm: $(crucible --version)"
           for theme in default modern; do
-            ../tool/crucible build -s ./docs -o "./out-$theme" -t "$theme" --title Smoke
-            pages=$(find "./out-$theme" -name '*.html' | wc -l)
-            assets=$(find "./out-$theme" \( -name '*.css' -o -name '*.js' \) | wc -l)
-            echo "$theme: $pages page(s), $assets asset(s)"
+            crucible build -s ./docs -o "./out-$tfm-$theme" -t "$theme" --title Smoke
+            pages=$(find "./out-$tfm-$theme" -name '*.html' | wc -l)
+            assets=$(find "./out-$tfm-$theme" \( -name '*.css' -o -name '*.js' \) | wc -l)
+            echo "$tfm $theme: $pages page(s), $assets asset(s)"
             # Themes ship as package content; if that regresses the build either
             # fails outright or emits pages with no stylesheet.
             if [ "$pages" -lt 1 ] || [ "$assets" -lt 4 ]; then
-              echo "::error::$theme theme produced $pages pages / $assets assets"
+              echo "::error::$tfm $theme theme produced $pages pages / $assets assets"
               exit 1
             fi
+          done
           done
 
   # Publishes with NuGet trusted publishing: the job exchanges a GitHub OIDC
@@ -221,8 +273,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '10.0.x'
-          dotnet-quality: 'preview'
+          dotnet-version: '11.0.x'
 
       - name: Check the nuget.org user is configured
         env:

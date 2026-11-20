@@ -29,6 +29,15 @@ With `indent="yes"`, both themes and the sitemap now serialize in Saxon's layout
 - Boolean attributes are minimized: `hidden="hidden"` → `hidden`, `async="async"` → `async`.
 - `sitemap.xml` puts `<urlset>` on the line after the XML declaration.
 
+### .NET 11
+
+- **crucible.cli ships net11.0 and net10.0 builds.** `dotnet tool install` picks the newest one
+  the machine can run, so a machine with only .NET 10 keeps working. Both builds render
+  phoenixml.dev byte-identically (139 files).
+- **The repository builds with SDK 11.** `global.json` pins 11.0.100 (`rollForward:
+  latestFeature`). With SDK 10 the solution still builds, for net10.0 only, and CI keeps a job
+  that proves it.
+
 ### Packages
 
 - **Markdig 1.3.2 → 1.6.0.** phoenixml.dev (139 files) and pixault.dev (45 files) build
